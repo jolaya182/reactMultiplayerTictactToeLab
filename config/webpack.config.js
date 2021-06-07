@@ -4,7 +4,7 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
 const dist = path.resolve(__dirname, '../dist');
 module.exports = {
-  entry: './src/index.jsx',
+  entry: './frontend/src/index.jsx',
 
   output: {
     filename: 'bundle.js',
@@ -16,7 +16,7 @@ module.exports = {
   devtool: 'source-map',
 
   plugins: [
-    new HtmlWebpackPlugin({ template: './src/index.html' }),
+    new HtmlWebpackPlugin({ template: './frontend/src/index.html' }),
 
     new MiniCssExtractPlugin()
   ],

@@ -19,7 +19,7 @@ const Heros = () => {
 
   return (
     <div>
-      Hero!!
+      Hero!!!
       <button type="button" onClick={() => setSheros(marvel)}>
         Marvel
       </button>

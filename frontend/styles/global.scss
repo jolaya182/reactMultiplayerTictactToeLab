@@ -15,3 +15,49 @@ main {
 button {
   font-size: 1.5rem;
 }
+
+.container{
+  height: 100vh;
+  width:100%;
+  display: flex;
+}
+.sidebar{
+  height: 100%;
+  width: 15%;
+  border-right: var(--commonLine);
+}
+
+.chat-panel{
+  height: 100%;
+  width:85%;
+  display:flex;
+  flex-direction: column;
+}
+
+.body-container{
+  width: 100%;
+  height: 75%;
+  overflow: scroll;
+  border-bottom: var(--commonLine);
+}
+
+.row{
+  cursor: pointer;
+}
+
+.messages{
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.text-box{
+  height: 15%;
+  width:100%;
+}
+
+.channel-info{
+  height:10%;
+  width:100%;
+  border-bottom: var(--commonLine);
+}

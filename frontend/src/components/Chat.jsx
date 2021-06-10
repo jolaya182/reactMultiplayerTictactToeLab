@@ -39,7 +39,7 @@ const Chat = ({
       return (
         <div className="row" key={user.id}>
           {' '}
-          You: {user.name}
+          You: {user.username}
         </div>
       );
     }
@@ -92,6 +92,7 @@ const Chat = ({
           handleMessageChange={handleMessageChange}
           handleKeyPress={handleKeyPress}
           placeholder="say something"
+          Disconnect={Disconnect}
         />
       </div>
     </div>

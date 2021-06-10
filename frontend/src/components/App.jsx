@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 import immer from 'immer';
-import Hero from './Heros';
+// import Hero from './Heros';
 // import FetchApi from './FetchApi';
 import Form from './Form';
 import Chat from './Chat';
@@ -29,6 +29,8 @@ const App = () => {
   const [allUsers, setAllUsers] = useState([]);
   const [messages, setMessages] = useState(initialMessageState);
   const [message, setMessage] = useState();
+  const [oponent, setOponent] = useState();
+  const [player, setPlayer] = useState();
   const socketRef = useRef();
 
   const sendMessage = () => {
@@ -50,7 +52,7 @@ const App = () => {
     setMessage(newMessages);
   };
 
-  const handleKeyPress = (e) => {
+  const handleKeyPress = () => {
     // console.log('sent');
     // if (e.key === 'Enter') {
     sendMessage();
@@ -98,6 +100,38 @@ const App = () => {
     setCurrentChat(newCurrentChat);
   };
 
+  const connectGame = () => {
+    socketRef.current = io.connect('http://localhost:3000', {
+      reconnectionDelay: 1000,
+      reconnection: true,
+      reconnectionAttemps: 10,
+      transports: ['websocket'],
+      agent: false,
+      upgrade: false,
+      rejectUnauthorized: false
+    });
+    socketRef.current.emit('join game', 'javier');
+    socketRef.current.on('game joined', (gameInfo) => {
+      console.log('returned->gameInfo', gameInfo);
+      const { oponentPlayer, iAm } = gameInfo;
+      setOponent(oponentPlayer);
+      console.log('player is ', gameInfo[iAm]);
+      setPlayer(gameInfo[iAm]);
+    });
+  };
+
+  const Disconnect = () => {
+    socketRef.current.emit('delete-room');
+  };
+
+  const comm = () => {
+    // const { id } = oponent;
+    socketRef.current.emit('send to player', oponent);
+    socketRef.current.on('receive from player', (mess) => {
+      console.log('mess to ->', mess);
+    });
+  };
+
   const connect = (e) => {
     e.preventDefault();
     setConnected(true);
@@ -120,6 +154,7 @@ const App = () => {
     });
 
     socketRef.current.on('new message', ({ content, sender, chatName }) => {
+      console.log('new message-->');
       setMessages((theNewMessages) => {
         const newMessages = immer(theNewMessages, (draft) => {
           if (draft[chatName]) {
@@ -155,7 +190,13 @@ const App = () => {
     );
   } else {
     body = (
-      <Form username={username} onChange={handleChange} connect={connect} />
+      <Form
+        username={username}
+        onChange={handleChange}
+        connect={connectGame}
+        Disconnect={Disconnect}
+        comm={comm}
+      />
     );
   }
 

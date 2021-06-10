@@ -10,6 +10,7 @@ const socket = require('socket.io');
 // const io = socket(server);
 const sqlite3 = require('sqlite3');
 const path = require('path');
+const { cli } = require('webpack');
 
 const dbPath = path.join(__dirname, '/database');
 const db = new sqlite3.Database(`${dbPath}/tictactoe.db`);
@@ -46,14 +47,91 @@ const messages = {
   javascript: []
 };
 
+let tempPlayers = [];
+const allPlayers = {};
+
 io.on('connection', (clientSocket) => {
   console.log('connected!');
+  console.log('clientSocket # of rooms', clientSocket.rooms);
+
+  clientSocket.on('join game', (player) => {
+    const usersId = clientSocket.id;
+    const user = {
+      // playerSocket: clientSocket,
+      playerName: player,
+      id: usersId,
+      gameInfo: null,
+      oponentPlayer: null
+    };
+
+    if (tempPlayers.length % 2 !== 0) {
+      const olderPlayer = tempPlayers.pop();
+      // const olderPlayerSocket = olderPlayer.playerSocket;
+      const olderPlayerId = olderPlayer.id;
+      const newRoom = `${olderPlayer.id}${usersId}`;
+      const gameInfo = {
+        roomName: newRoom,
+        firstPlayer: { ...olderPlayer, oponentPlayer: usersId },
+        secondPlayer: { ...user, oponentPlayer: olderPlayerId },
+        iAm: 'firstPlayer'
+      };
+      allPlayers[olderPlayerId] = {
+        ...allPlayers[olderPlayerId],
+        oponentPlayer: usersId,
+        ...gameInfo
+      };
+      allPlayers[usersId] = {
+        ...allPlayers[usersId],
+        oponentPlayer: olderPlayerId,
+        ...gameInfo,
+        iAm: 'secondPlayer'
+      };
+
+      // clientSocket.join(olderPlayerId);
+      // console.log('allPlayers[olderPlayerId]', allPlayers[olderPlayerId]);
+      // allPlayers[olderPlayerId].join('sand');
+      // olderPlayerSocket.join('sand');
+      // console.log('gameInfo', gameInfo);
+      // console.log('usersId', usersId);
+      clientSocket.emit('game joined', {
+        oponentPlayer: olderPlayerId,
+        ...gameInfo,
+        iAm: 'secondPlayer'
+      });
+      clientSocket
+        .to(olderPlayerId)
+        .emit('game joined', { oponentPlayer: usersId, ...gameInfo });
+    } else {
+      tempPlayers.push(user);
+      //
+      const gameInfo = {
+        roomName: 'TBA',
+        first: user,
+        second: { player: 'waiting for player to connect', id: null }
+      };
+
+      clientSocket.emit('game joined', gameInfo);
+    }
+
+    allPlayers[usersId] = user;
+
+    // console.log('tempPlayers ->', tempPlayers);
+  });
+
+  clientSocket.on('send to player', (id) => {
+    console.log('player', id);
+    console.log(`${clientSocket.id} == ${id} ==>`, clientSocket.id === id);
+    // io.to(oponent).emit('receive from player ', 'server Mmm');
+    clientSocket.to(id).emit('receive from player', id);
+  });
+
   clientSocket.on('join server', (username) => {
     const user = {
       username,
       id: clientSocket.id
     };
     users.push(user);
+    // tempPlayers.push(user);
     clientSocket.emit('new user', users);
   });
 
@@ -93,7 +171,9 @@ io.on('connection', (clientSocket) => {
 
   clientSocket.on('disconnect', () => {
     users = users.filter((u) => u.id !== clientSocket.id);
+    tempPlayers = tempPlayers.filter((u) => u.id !== clientSocket.id);
     clientSocket.emit('new user', users);
+    console.log('remaining users', tempPlayers);
   });
 });
 // @todo create function that chechks for error. pass it as middleware

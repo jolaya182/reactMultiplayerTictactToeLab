@@ -38,6 +38,14 @@ const cors = {
 };
 const io = socket(server, cors);
 
+const users = [];
+const messages = {
+  general: [],
+  random: [],
+  jokes: [],
+  javascript: []
+};
+
 const tempPlayers = [];
 const allPlayers = {};
 
@@ -78,6 +86,12 @@ io.on('connection', (clientSocket) => {
         iAm: 'secondPlayer'
       };
 
+      // clientSocket.join(olderPlayerId);
+      // console.log('allPlayers[olderPlayerId]', allPlayers[olderPlayerId]);
+      // allPlayers[olderPlayerId].join('sand');
+      // olderPlayerSocket.join('sand');
+      // console.log('gameInfo', gameInfo);
+      // console.log('usersId', usersId);
       clientSocket.emit('game joined', {
         oponentPlayer: olderPlayerId,
         ...gameInfo,
@@ -105,11 +119,52 @@ io.on('connection', (clientSocket) => {
 
   clientSocket.on('send to player', (id) => {
     console.log('room', clientSocket.rooms);
-    console.log('id', id);
-    clientSocket.broadcast
-      .to(id)
-      .emit('receive from player', { row: 0, col: 0 });
+    clientSocket.broadcast.to(id).emit('receive from player', { id });
   });
+
+  clientSocket.on('join server', (username) => {
+    const user = {
+      username,
+      id: clientSocket.id
+    };
+    users.push(user);
+    // tempPlayers.push(user);
+    clientSocket.emit('new user', users);
+  });
+
+  clientSocket.on('join room', (roomName, cb) => {
+    clientSocket.join(roomName);
+    cb(messages[roomName]);
+    // socket.emit('joined', messages[roomName]);
+  });
+
+  clientSocket.on(
+    'send message',
+    ({ content, to, sender, chatName, isChannel }) => {
+      console.log('send message', content);
+      if (isChannel) {
+        const payload = {
+          content,
+          chatName,
+          sender
+        };
+        clientSocket.to(to).emit('new message', payload);
+      } else {
+        const payload = {
+          content,
+          chatName: sender,
+          sender
+        };
+        clientSocket.to(to).emit('new message', payload);
+      }
+      if (messages[chatName]) {
+        messages[chatName].push({
+          sender,
+          content
+        });
+      }
+    }
+  );
 
   clientSocket.on('disconnect', () => {
     console.log('disconect', clientSocket.id);
@@ -126,6 +181,8 @@ io.on('connection', (clientSocket) => {
       tempPlayers.pop();
     }
 
+    // users = users.filter((u) => u.id !== clientSocket.id);
+    // clientSocket.emit('new user', users);
     console.log('remaining users', tempPlayers);
     console.log('rooms', clientSocket.rooms);
   });

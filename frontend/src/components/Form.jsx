@@ -9,13 +9,13 @@ const Form = ({ username, onChange, connect, Disconnect, comm }) => {
         value={username}
         onChange={onChange}
       />
-      <button onClick={connect} type="button">
+      <button onClick={() => connect()} type="button">
         Connect
       </button>
       <button type="button" onClick={() => Disconnect()}>
         Disconnect
       </button>
-      <button type="button" onClick={comm}>
+      <button type="button" onClick={() => comm()}>
         comm
       </button>
     </form>

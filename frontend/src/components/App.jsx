@@ -45,24 +45,30 @@ const App = () => {
     socketRef.current.emit('send to player', oponent);
   };
 
-  // const showMess = (cor) =>
-  //   useCallback(() => {
-  //     console.log('got from the player', cor);
-  //     setCoord(cor);
-  //   }, [setCoord]);
+  const leaderBoard = () => {
+    console.log('geting-leader-board');
+    socketRef.current.emit('get-leader-board');
+    // setCoord(cor);
+  };
 
   const showMess = (cor) => {
     console.log('got from the player', cor);
     setCoord(cor);
+  };
+  const showLeaderBoard = (leaderText) => {
+    console.log('showLeaderBoard:-->>', leaderText);
   };
 
   useEffect(() => {
     console.log('use effect');
     if (!socketRef.current) return;
     socketRef.current.on('receive from player', showMess);
-
-    return () => socketRef.current.off('receive from player');
-  }, [showMess]);
+    socketRef.current.on('receive-leader-board', showLeaderBoard);
+    return () => {
+      socketRef.current.off('receive from player');
+      socketRef.current.off('receive-leader-board');
+    };
+  }, [showMess, showLeaderBoard]);
 
   return (
     <div>
@@ -77,6 +83,9 @@ const App = () => {
       </button>
       <button type="button" onClick={() => comm()}>
         Comm
+      </button>
+      <button type="button" onClick={() => leaderBoard()}>
+        leaderBoard
       </button>
     </div>
   );

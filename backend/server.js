@@ -10,7 +10,6 @@ const socket = require('socket.io');
 // const io = socket(server);
 const sqlite3 = require('sqlite3');
 const path = require('path');
-const { cli } = require('webpack');
 
 const dbPath = path.join(__dirname, '/database');
 const db = new sqlite3.Database(`${dbPath}/tictactoe.db`);
@@ -116,6 +115,7 @@ io.on('connection', (clientSocket) => {
     console.log('disconect', clientSocket.id);
     const userId = clientSocket.id;
     const disconectedPlayer = allPlayers[userId];
+    if (!disconectedPlayer) return;
     console.log('disconectedPlayer', disconectedPlayer);
 
     if (disconectedPlayer.oponentPlayer) {
@@ -181,7 +181,10 @@ io.on('connection', (clientSocket) => {
     clientSocket
       .to('tic-tact-toe-room')
       .emit('receive-leader-board', 'This is the leaderboard');
-    clientSocket.emit('receive-leader-board', 'This is the leaderboard');
+    clientSocket.broadcast.emit(
+      `receive-leader-board`,
+      `This is the leaderboard`
+    );
   });
 });
 // @todo create function that chechks for error. pass it as middleware
@@ -195,7 +198,24 @@ db.run(
 
 let sql = '';
 const returnResults = (req, res) => {
+  const { body } = req;
+  console.log('returnResults', body);
+
   res.send({ data: req.body });
+};
+
+const checkForErrors = (req, res, next) => {
+  const { body } = req;
+  const { err, rows } = body;
+  console.log('checkForErrors', body);
+  if (err) {
+    res.status(500).send({ error: body.message });
+  } else {
+    req.body = rows;
+    // returnResults(req, res);
+    // res.send({ data: body });
+    next();
+  }
 };
 
 app.get(
@@ -252,19 +272,24 @@ app.get(
   returnResults
 );
 
+const getLeaderBoard = (req, res, next) => {
+  const { body } = req;
+  io.to('tic-tact-toe-room').emit('leaderBoardReceived', body);
+  next();
+};
+
+// select top ten leaders with the highest wins
 app.get(
   '/leaderboard',
   (req, res, next) => {
     sql = `Select * FROM leaderboard`;
     db.all(sql, [], function (err, rows) {
-      if (err) {
-        res.status(500).send({ error: err.message });
-      } else {
-        req.body = rows;
-        next();
-      }
+      req.body = { err, rows };
+      next();
     });
   },
+  checkForErrors,
+  getLeaderBoard,
   returnResults
 );
 

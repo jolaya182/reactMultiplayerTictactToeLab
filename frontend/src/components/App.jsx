@@ -5,11 +5,11 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import io from 'socket.io-client';
 import immer from 'immer';
 // import Hero from './Heros';
-// import FetchApi from './FetchApi';
+import FetchApi from './FetchApi';
 import Form from './Form';
 
 const App = () => {
-  // const url = 'http://localhost:3000';
+  // console.log("results->fetch:",results);
 
   const [oponent, setOponent] = useState();
   const [player, setPlayer] = useState();
@@ -34,6 +34,11 @@ const App = () => {
       setOponent(oponentPlayer);
       // setPlayer(gameInfo[iAm]);
     });
+    const url = 'http://localhost:3000/leaderboard';
+    socketRef.current.on('leaderBoardReceived', (leaders) => {
+      console.log('here are the leaders', leaders);
+    });
+    FetchApi(url);
   };
 
   const disconnect = () => {

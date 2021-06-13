@@ -257,8 +257,8 @@ app.get(
 app.get(
   '/win',
   (req, res, next) => {
-    const id = 12;
-    const wins = 15;
+    const id = 13;
+    const wins = 13;
     sql = `INSERT INTO leaderboard( userId, wins ) VALUES( '${id}', '${wins}' )`;
     db.run(sql, [], function (err) {
       if (err) {
@@ -282,7 +282,12 @@ const getLeaderBoard = (req, res, next) => {
 app.get(
   '/leaderboard',
   (req, res, next) => {
-    sql = `Select * FROM leaderboard`;
+    sql = `SELECT  users.name, leaderboard.userId, leaderboard.wins
+    FROM users
+    INNER JOIN leaderboard 
+    ON users.userId = leaderboard.userId
+    ORDER BY wins DESC
+    LIMIT 10`;
     db.all(sql, [], function (err, rows) {
       req.body = { err, rows };
       next();

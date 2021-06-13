@@ -1,5 +1,17 @@
 /* eslint-disable react/prop-types */
-const Row = ({ children }) => {
-  return <div className="row">{children}</div>;
+
+import Column from './Column';
+
+const Row = ({ gridRow, rowIndex }) => {
+  return (
+    <div className="roww">
+      {gridRow && gridRow.map((row,rowIndx)=>{
+        return (<Column letter={row[rowIndex][rowIndx]} />)
+      });
+      }
+      <Column letter={gridRow[rowIndex][1]} />
+      <Column letter={gridRow[rowIndex][3]} />
+    </div>
+  );
 };
 export default Row;

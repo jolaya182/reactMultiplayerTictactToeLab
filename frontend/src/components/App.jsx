@@ -6,6 +6,7 @@ import io from 'socket.io-client';
 import immer from 'immer';
 // import Hero from './Heros';
 import FetchApi from './FetchApi';
+import TicTacToeGrid from './TicTacToeGrid';
 import Form from './Form';
 
 const App = () => {
@@ -15,6 +16,9 @@ const App = () => {
   const [player, setPlayer] = useState();
   const [coord, setCoord] = useState();
   const socketRef = useRef();
+  const [password, setPassword] = useState();
+  const [name, setName] = useState();
+  const [gridMatrix, setGridMatrix] = useState([[]]);
 
   const connectGame = () => {
     socketRef.current = io.connect('http://localhost:3000', {
@@ -75,11 +79,30 @@ const App = () => {
     };
   }, [showMess, showLeaderBoard]);
 
+  const submitLogin = (e) => {
+    e.preventDefault();
+    console.log('submit', name, password);
+    return { name, password };
+  };
+
   return (
     <div>
       {console.log('render')}
-      {/* <Hero /> */}
       <h1>App!</h1>
+      <input
+        type="text"
+        onChange={(e) => setName(e.target.value)}
+        placeholder="name"
+      />
+      <input
+        type="password"
+        htmlFor="password"
+        onChange={(e) => setPassword(e.target.value)}
+        placeholder="password"
+      />
+      <button type="button" id="password" onClick={submitLogin}>
+        Submit
+      </button>
       <button type="button" onClick={() => connectGame()}>
         Connect
       </button>
@@ -92,6 +115,7 @@ const App = () => {
       <button type="button" onClick={() => leaderBoard()}>
         leaderBoard
       </button>
+      <TicTacToeGrid gridMatrix={gridMatrix}></TicTacToeGrid>
     </div>
   );
 };

@@ -13,12 +13,10 @@ const App = () => {
   // console.log("results->fetch:",results);
 
   const [oponent, setOponent] = useState();
-  const [player, setPlayer] = useState();
-  const [coord, setCoord] = useState();
+
   const socketRef = useRef();
   const [password, setPassword] = useState();
   const [name, setName] = useState();
-  const [gridMatrix, setGridMatrix] = useState([[]]);
 
   const connectGame = () => {
     socketRef.current = io.connect('http://localhost:3000', {
@@ -62,7 +60,7 @@ const App = () => {
 
   const showMess = (cor) => {
     console.log('got from the player', cor);
-    setCoord(cor);
+    // setCoord(cor);
   };
   const showLeaderBoard = (leaderText) => {
     console.log('showLeaderBoard:-->>', leaderText);
@@ -115,7 +113,7 @@ const App = () => {
       <button type="button" onClick={() => leaderBoard()}>
         leaderBoard
       </button>
-      <TicTacToeGrid gridMatrix={gridMatrix}></TicTacToeGrid>
+      <TicTacToeGrid></TicTacToeGrid>
     </div>
   );
 };

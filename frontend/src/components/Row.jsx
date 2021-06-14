@@ -2,15 +2,20 @@
 
 import Column from './Column';
 
-const Row = ({ gridRow, rowIndex }) => {
+const Row = ({ gridRow, markSquare, rowIndx }) => {
   return (
     <div className="roww">
-      {gridRow && gridRow.map((row,rowIndx)=>{
-        return (<Column letter={row[rowIndex][rowIndx]} />)
-      });
-      }
-      <Column letter={gridRow[rowIndex][1]} />
-      <Column letter={gridRow[rowIndex][3]} />
+      {gridRow &&
+        gridRow.map((letter, colIndx) => {
+          return (
+            <Column
+              letter={letter}
+              key={`row${colIndx}`}
+              markSquare={markSquare}
+              coord={{ row: rowIndx, col: colIndx }}
+            />
+          );
+        })}
     </div>
   );
 };

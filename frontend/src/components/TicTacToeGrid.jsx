@@ -20,7 +20,7 @@ const TicTacToeGrid = ({ socketRef, oponentId, IAmPlayer }) => {
   const [tie, setTie] = useState(false);
 
   const emitToPlayer = (newGridMatrix, cp, winr, tm, t) => {
-    console.log("oponent id -->")
+    console.log('oponent id -->');
     socketRef.current.emit(
       'send-grid',
       oponentId,
@@ -32,7 +32,7 @@ const TicTacToeGrid = ({ socketRef, oponentId, IAmPlayer }) => {
     );
   };
   const receiveOponentsState = (grid, player, winr, totalM, ti) => {
-    console.log('receive-grid', grid);
+    // console.log('receive-grid', grid);
     setGridMatrix(grid);
     setCurrentPlayer(player);
     setWinner(winr);
@@ -183,18 +183,18 @@ const TicTacToeGrid = ({ socketRef, oponentId, IAmPlayer }) => {
     const newPlayer = changePlayer(currentPlayer);
     if (oponentId !== 'computer') {
       console.log('computer->', oponentId);
-      console.log(
-        'newGridMatrix',
-        newGridMatrix,
-        'newPlayer',
-        newPlayer,
-        'winner',
-        winner,
-        'newCount',
-        newCount,
-        'tie',
-        tie
-      );
+      // console.log(
+      //   'newGridMatrix',
+      //   newGridMatrix,
+      //   'newPlayer',
+      //   newPlayer,
+      //   'winner',
+      //   winner,
+      //   'newCount',
+      //   newCount,
+      //   'tie',
+      //   tie
+      // );
       emitToPlayer(newGridMatrix, newPlayer, winner, newCount, tie);
     } else {
       // eslint-disable-next-line no-lonely-if
@@ -217,22 +217,6 @@ const TicTacToeGrid = ({ socketRef, oponentId, IAmPlayer }) => {
 
   return (
     <div className="grid">
-      {tie && (
-        <>
-          <h1>Tie!</h1>
-          <button type="button" onClick={resetGame}>
-            Reset
-          </button>
-        </>
-      )}
-      {winner && (
-        <>
-          <h1> Winner is : {winner}</h1>
-          <button type="button" onClick={resetGame}>
-            Reset
-          </button>
-        </>
-      )}
       {gridMatrix &&
         gridMatrix.map((gridRow, indx) => {
           return (
@@ -244,6 +228,22 @@ const TicTacToeGrid = ({ socketRef, oponentId, IAmPlayer }) => {
             />
           );
         })}
+      {winner && (
+        <>
+          <div> Winner is : {winner}</div>
+          <button type="button" onClick={resetGame}>
+            Reset
+          </button>
+        </>
+      )}
+      {tie && (
+        <>
+          <div className="leader">Tie!</div>
+          <button type="button" onClick={resetGame}>
+            Reset
+          </button>
+        </>
+      )}
     </div>
   );
 };

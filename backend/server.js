@@ -52,58 +52,62 @@ io.on('connection', (clientSocket) => {
     console.log('tempPlayers->', tempPlayers);
     const usersId = clientSocket.id;
     const user = {
-      // playerSocket: clientSocket,
       playerName: player,
       id: usersId,
       oponentPlayer: null
     };
 
+    // @todo place an and. if the userId ex.
     if (tempPlayers.length % 2 !== 0) {
       const olderPlayer = tempPlayers.pop();
-      // const olderPlayerSocket = olderPlayer.playerSocket;
       const olderPlayerId = olderPlayer.id;
-      console.log('olderPlayerId-->', olderPlayerId);
-      const newUser = { ...user, oponentPlayer: olderPlayerId };
-      const gameInfo = {
-        firstPlayer: { ...olderPlayer, oponentPlayer: usersId },
-        secondPlayer: { ...newUser, oponentPlayer: olderPlayerId },
+      const olderPlayerName = olderPlayer.playerName;
+      console.log('olderPlayer-->', olderPlayer);
+      // eslint-disable-next-line prettier/prettier
+      const secondPlayer = {
+        ...user,
+        oponentPlayer: olderPlayerId,
+        oponentPlayerName: player
+      };
+      const firstPlayer = {
+        ...olderPlayer,
+        oponentPlayer: usersId,
+        oponentPlayerName: olderPlayerName
+      };
+
+      allPlayers[olderPlayerId] = {
+        ...firstPlayer,
         iAm: 'firstPlayer'
       };
-      allPlayers[olderPlayerId] = {
-        ...allPlayers[olderPlayerId],
-        oponentPlayer: usersId,
-        ...gameInfo
-      };
+
       allPlayers[usersId] = {
-        ...allPlayers[usersId],
-        oponentPlayer: olderPlayerId,
-        ...gameInfo,
+        ...secondPlayer,
         iAm: 'secondPlayer'
       };
-      allPlayers[usersId] = newUser;
-      clientSocket.emit('game joined', {
-        oponentPlayer: olderPlayerId,
-        ...gameInfo,
-        iAm: 'secondPlayer'
-      });
-      console.log('game joined olderPlayerId->', olderPlayerId);
+
+      console.log('oldier', allPlayers[olderPlayerId]);
+      console.log('usier', allPlayers[usersId]);
+      clientSocket.emit('game joined', allPlayers[usersId]);
       clientSocket
         .to(olderPlayerId)
-        .emit('game joined', { oponentPlayer: usersId, ...gameInfo });
+        .emit('game joined', allPlayers[olderPlayerId]);
+      console.log('allPlayers', allPlayers);
     } else {
-      tempPlayers.push(user);
-      //
+      console.log('pushing in the user');
       const gameInfo = {
-        roomName: 'TBA',
-        firstPlayer: user,
-        secondPlayer: { player: 'waiting for player to connect', id: null },
+        ...user,
+        oponentPlayer: null,
+        oponentPlayerName: 'waiting for player to connect',
         iAm: 'firstPlayer'
       };
-
+      if (allPlayers[usersId]) {
+        tempPlayers.push(gameInfo);
+        return;
+      }
       clientSocket.emit('game joined', gameInfo);
-      allPlayers[usersId] = user;
+      allPlayers[usersId] = gameInfo;
+      tempPlayers.push(gameInfo);
     }
-
     // console.log('tempPlayers ->', tempPlayers);
   });
 
@@ -128,47 +132,55 @@ io.on('connection', (clientSocket) => {
       console.log('oponentPlayer--->', oponentPlayer);
       const playerLeft = allPlayers[oponentPlayer];
       console.log('playerLeft', playerLeft);
-      const newPlayer = { ...playerLeft, oponentPlayer: null };
+      const newPlayer = {
+        ...playerLeft,
+        oponentPlayer: null,
+        oponentPlayerName: null,
+        iAm: 'firstPlayer'
+      };
       allPlayers[newPlayer.id] = newPlayer;
       delete allPlayers[userId];
       clientSocket.to(newPlayer.id).emit('player-left');
       // check if any tempPlayers available and deque the player
       // an pair the tempPlayer with the newPlayer
+      console.log('tempPlayers-->', tempPlayers);
       if (tempPlayers.length >= 1) {
         console.log(`tempPlayers.length >= 1 ${tempPlayers.length >= 1}`);
         const nextPlayer = tempPlayers.pop();
         const nextPlayerId = nextPlayer.id;
+        const nextPlayerOponentName = newPlayer.playerName;
         const newPlayerId = newPlayer.id;
-        const newNextPlayer = { ...nextPlayer, oponentPlayer: newPlayer.id };
-        const newerPlayer = { ...nextPlayer, oponentPlayer: newPlayerId };
-        const gameInfo = {
-          firstPlayer: { ...newerPlayer, oponentPlayer: nextPlayerId },
-          secondPlayer: { ...newNextPlayer, oponentPlayer: newPlayerId },
+        const newPlayerOponentName = nextPlayer.playerName;
+
+        const firstPlayer = {
+          ...newPlayer,
+          oponentPlayer: nextPlayerId,
+          oponentPlayerName: nextPlayerOponentName,
           iAm: 'firstPlayer'
         };
+        const secondPlayer = {
+          ...nextPlayer,
+          oponentPlayer: newPlayer.id,
+          oponentPlayerName: newPlayerOponentName,
+          iAm: 'secondPlayer'
+        };
+
         allPlayers[newPlayerId] = {
-          ...allPlayers[newPlayerId],
-          oponentPlayer: nextPlayerId,
-          ...gameInfo
+          ...firstPlayer,
+          iAm: 'firstPlayer'
         };
         allPlayers[nextPlayerId] = {
-          ...allPlayers[nextPlayerId],
-          oponentPlayer: newPlayerId,
-          ...gameInfo,
+          ...secondPlayer,
           iAm: 'secondPlayer'
         };
 
-        clientSocket.to(nextPlayerId).emit('game joined', {
-          oponentPlayer: newPlayerId,
-          ...gameInfo,
-          iAm: 'secondPlayer'
-        });
+        clientSocket
+          .to(nextPlayerId)
+          .emit('game joined', allPlayers[nextPlayerId]);
+
         clientSocket
           .to(newPlayerId)
-          .emit('game joined', { oponentPlayer: nextPlayerId, ...gameInfo });
-
-        allPlayers[newPlayerId] = newerPlayer;
-        allPlayers[nextPlayerId] = newNextPlayer;
+          .emit('game joined', allPlayers[newPlayerId]);
       } else {
         tempPlayers.push(newPlayer);
       }
@@ -180,6 +192,7 @@ io.on('connection', (clientSocket) => {
 
     console.log('discont remaining users', tempPlayers);
     console.log('rooms', clientSocket.rooms);
+    console.log('allPlayers', allPlayers);
   });
 
   clientSocket.on('get-leader-board', () => {
@@ -207,13 +220,17 @@ io.on('connection', (clientSocket) => {
     }
   );
 
-  clientSocket.on('inform-player-changed-room', (playerId) => {
-    console.log('inform-player-changed-room');
-    clientSocket.to(playerId).emit('player-left', 'changedLeft');
-    // clientSocket.to(newPlayer.id).emit('player-left');
+  // clientSocket.on('inform-player-new-player-entered-the-room',()=>{
+
+  // } );
+  clientSocket.on('inform-player-changed-room', (oponentId) => {
+    console.log('inform-player-changed-room', oponentId);
+    clientSocket.to(oponentId).emit('player-left', 'changedLeft');
+    // place this player into the tempPlayer array
+    tempPlayers.push(allPlayers[oponentId]);
+    console.log('oponentId', tempPlayers);
   });
 });
-// @todo create function that chechks for error. pass it as middleware
 db.run('PRAGMA foreign_keys=on');
 db.run(
   'CREATE TABLE IF NOT EXISTS users (userId INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, password TEXT )'

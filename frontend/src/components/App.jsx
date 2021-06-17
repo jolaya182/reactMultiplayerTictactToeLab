@@ -12,6 +12,7 @@ import LeaderBoard from './LeaderBoard';
 const App = () => {
   const url = 'http://localhost:3000/login';
   const [oponent, setOponent] = useState(false);
+  const [oponentName, setOponentName] = useState(null);
   const socketRef = useRef();
   const [password, setPassword] = useState();
   const [name, setName] = useState();
@@ -32,7 +33,7 @@ const App = () => {
         message = 'Waiting for another player to log on.';
         break;
       case 'selectedPlayer':
-        message = `You are playing against player: ${oponent}.`;
+        message = `You are playing against player: ${oponentName}.`;
         break;
       case 'youArePlayer':
         message = `I am the: ${IAmPlayer}.`;
@@ -73,15 +74,17 @@ const App = () => {
     socketRef.current.emit('join game', name);
     socketRef.current.on('game joined', (gameInfo) => {
       console.log('returned --->gameInfo', gameInfo);
-      const { oponentPlayer, iAm } = gameInfo;
+      const { oponentPlayer, oponentPlayerName, iAm, id } = gameInfo;
       console.log(`received oponent --> ${oponentPlayer}`);
-      console.log('player is ', gameInfo[iAm]);
-      setMyInfo(gameInfo[iAm]);
+      console.log('player is ', iAm);
+      setMyInfo(id);
       setOponent(oponentPlayer);
+      setOponentName(oponentPlayerName);
       setIAM(iAm);
     });
     socketRef.current.on('player-left', () => {
-      setOponent(false);
+      // setOponent(false);
+      // setIAM('firstPlayer');
     });
     socketRef.current.on('disconnect', () => {
       console.log('socketRef id', socketRef.current.id); // undefined
@@ -96,8 +99,9 @@ const App = () => {
     if (againstComputer) {
       console.log('toggling', againstComputer);
       setAgainstComputer(false);
-      socketRef.current.emit('join game', myInfo.id);
-      connectGame();
+      socketRef.current.emit('join game', myInfo);
+      // connectGame(leaders);
+      // socketRef.current.emit('inform-player-new-player-entered-the-room', oponent);
       // socketRef.current.emit();
     } else {
       // disconnect();
@@ -111,9 +115,9 @@ const App = () => {
   const appendMessage = () => {
     let m = '';
     if (login) m += `${updateMessage('youArePlayer')}`;
-    if (login && !oponent) m += `, ${updateMessage('waiting')}`;
-    if (login && oponent) m += `, ${updateMessage('selectedPlayer')}`;
-    if (login && againstComputer) m += `, ${updateMessage('computer')}`;
+    if (login && !oponent) m += ` ${updateMessage('waiting')}`;
+    if (login && oponent) m += ` ${updateMessage('selectedPlayer')}`;
+    if (login && againstComputer) m += ` ${updateMessage('computer')}`;
     // setMessage(m);
     return m;
   };
@@ -144,6 +148,9 @@ const App = () => {
   };
   const logout = () => {
     setlogin(false);
+    setName(false);
+    setOponent(false);
+    setMyInfo(false);
     disconnect();
   };
 
@@ -152,7 +159,6 @@ const App = () => {
       <section className="gameHeader">
         Hi {myInfo && myInfo.playerName} Tic Tac Toe! {appendMessage()}
       </section>
-
       {!login && (
         <Form
           setName={setName}
@@ -161,27 +167,25 @@ const App = () => {
         />
       )}
       {login && (
-        <button type="button" onClick={() => togglePlayerType()}>
-          {againstComputer ? `Play Against Human` : `Play With Computer`}
-        </button>
-      )}
-      {login && (
-        <button type="button" onClick={() => logout()}>
-          logout
-        </button>
-      )}
-      {login && (
-        <>
-          <TicTacToeGrid
-            socketRef={socketRef}
-            oponentId={oponent || againstComputer}
-            IAmPlayer={IAmPlayer}
-          />
-        </>
-      )}
-      {login && (
-        <div className="leaderBoard">
-          <LeaderBoard leaders={leaders} />
+        <div className="appContainer">
+          <div className="roww">
+            <div className="sideBar">
+              <div className="leaderBoard">
+                <LeaderBoard leaders={leaders} />
+              </div>
+              <button type="button" onClick={() => logout()}>
+                logout
+              </button>
+              <button type="button" onClick={() => togglePlayerType()}>
+                {againstComputer ? `Human` : `Computer`}
+              </button>
+            </div>
+            <TicTacToeGrid
+              socketRef={socketRef}
+              oponentId={oponent || againstComputer}
+              IAmPlayer={IAmPlayer}
+            />
+          </div>
         </div>
       )}
     </div>

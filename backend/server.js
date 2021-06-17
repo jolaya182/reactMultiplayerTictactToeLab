@@ -48,6 +48,8 @@ io.on('connection', (clientSocket) => {
   clientSocket.join('tic-tact-toe-room');
 
   clientSocket.on('join game', (player) => {
+    console.log('join Game Request');
+    console.log('tempPlayers->', tempPlayers);
     const usersId = clientSocket.id;
     const user = {
       // playerSocket: clientSocket,
@@ -84,6 +86,7 @@ io.on('connection', (clientSocket) => {
         ...gameInfo,
         iAm: 'secondPlayer'
       });
+      console.log('game joined olderPlayerId->', olderPlayerId);
       clientSocket
         .to(olderPlayerId)
         .emit('game joined', { oponentPlayer: usersId, ...gameInfo });
@@ -92,8 +95,9 @@ io.on('connection', (clientSocket) => {
       //
       const gameInfo = {
         roomName: 'TBA',
-        first: user,
-        second: { player: 'waiting for player to connect', id: null }
+        firstPlayer: user,
+        secondPlayer: { player: 'waiting for player to connect', id: null },
+        iAm: 'firstPlayer'
       };
 
       clientSocket.emit('game joined', gameInfo);
@@ -115,6 +119,7 @@ io.on('connection', (clientSocket) => {
     console.log('disconect', clientSocket.id);
     const userId = clientSocket.id;
     const disconectedPlayer = allPlayers[userId];
+    clientSocket.disconnect();
     if (!disconectedPlayer) return;
     console.log('disconectedPlayer', disconectedPlayer);
 
@@ -126,7 +131,7 @@ io.on('connection', (clientSocket) => {
       const newPlayer = { ...playerLeft, oponentPlayer: null };
       allPlayers[newPlayer.id] = newPlayer;
       delete allPlayers[userId];
-
+      clientSocket.to(newPlayer.id).emit('player-left');
       // check if any tempPlayers available and deque the player
       // an pair the tempPlayer with the newPlayer
       if (tempPlayers.length >= 1) {
@@ -173,18 +178,39 @@ io.on('connection', (clientSocket) => {
       tempPlayers.pop();
     }
 
-    console.log('remaining users', tempPlayers);
+    console.log('discont remaining users', tempPlayers);
     console.log('rooms', clientSocket.rooms);
   });
 
   clientSocket.on('get-leader-board', () => {
-    clientSocket
+    console.log('get-leader-board');
+    clientSocket.emit(`receive-leader-board`, `This is the leaderboard`);
+    clientSocket.broadcast
       .to('tic-tact-toe-room')
       .emit('receive-leader-board', 'This is the leaderboard');
-    clientSocket.broadcast.emit(
-      `receive-leader-board`,
-      `This is the leaderboard`
-    );
+  });
+
+  clientSocket.on(
+    'send-grid',
+    (playerId, gridMatrix, currentPlayer, winner, totalMarks, tie) => {
+      console.log('send-grid', playerId, gridMatrix);
+      clientSocket
+        .to(playerId)
+        .emit(
+          'receive-grid',
+          gridMatrix,
+          currentPlayer,
+          winner,
+          totalMarks,
+          tie
+        );
+    }
+  );
+
+  clientSocket.on('inform-player-changed-room', (playerId) => {
+    console.log('inform-player-changed-room');
+    clientSocket.to(playerId).emit('player-left', 'changedLeft');
+    // clientSocket.to(newPlayer.id).emit('player-left');
   });
 });
 // @todo create function that chechks for error. pass it as middleware
@@ -199,15 +225,15 @@ db.run(
 let sql = '';
 const returnResults = (req, res) => {
   const { body } = req;
-  console.log('returnResults', body);
+  // console.log('returnResults', body);
 
-  res.send({ data: req.body });
+  res.send({ data: body });
 };
 
 const checkForErrors = (req, res, next) => {
   const { body } = req;
   const { err, rows } = body;
-  console.log('checkForErrors', body);
+  // console.log('checkForErrors', body);
   if (err) {
     res.status(500).send({ error: body.message });
   } else {
@@ -218,6 +244,37 @@ const checkForErrors = (req, res, next) => {
   }
 };
 
+const pullInLeaders = (req, res, next) => {
+  sql = `SELECT  users.name, leaderboard.userId, leaderboard.wins
+  FROM users
+  INNER JOIN leaderboard 
+  ON users.userId = leaderboard.userId
+  ORDER BY wins DESC
+  LIMIT 10`;
+  db.all(sql, [], (err, rows) => {
+    req.body = { err, rows };
+    // console.log('rows', rows);
+    req.body = rows;
+    next();
+  });
+};
+
+app.post(
+  '/login',
+  (req, res, next) => {
+    console.log('went through get!!');
+    const { name, password } = req.body;
+    sql = `SELECT name FROM users WHERE password='${password}' AND name='${name}'`;
+    db.all(sql, [], (err, rows) => {
+      req.body = { err, rows };
+      // console.log('rows', rows);
+      next();
+    });
+  },
+  checkForErrors,
+  pullInLeaders,
+  returnResults
+);
 app.get(
   '/',
   async (req, res, next) => {
@@ -274,7 +331,7 @@ app.get(
 
 const getLeaderBoard = (req, res, next) => {
   const { body } = req;
-  io.to('tic-tact-toe-room').emit('leaderBoardReceived', body);
+  io.to('tic-tact-toe-room').emit('receive-leader-board', body);
   next();
 };
 

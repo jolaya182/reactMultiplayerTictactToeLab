@@ -1,24 +1,60 @@
 /* eslint-disable consistent-return */
 /* eslint-disable react/react-in-jsx-scope */
 // @refresh reset
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 import immer from 'immer';
-// import Hero from './Heros';
+import Form from './Form';
 import FetchApi from './FetchApi';
 import TicTacToeGrid from './TicTacToeGrid';
-import Form from './Form';
+import LeaderBoard from './LeaderBoard';
 
 const App = () => {
-  // console.log("results->fetch:",results);
-
-  const [oponent, setOponent] = useState();
-
+  const url = 'http://localhost:3000/login';
+  const [oponent, setOponent] = useState(false);
   const socketRef = useRef();
   const [password, setPassword] = useState();
   const [name, setName] = useState();
+  const [login, setlogin] = useState(false);
+  const [IAmPlayer, setIAM] = useState(false);
+  const [myInfo, setMyInfo] = useState(false);
+  const [leaders, setLeaders] = useState(false);
+  const [againstComputer, setAgainstComputer] = useState(false);
 
-  const connectGame = () => {
+  const showLeaderBoard = (comingLeaders) => {
+    console.log('geting-leader-board', comingLeaders);
+    // setLeaders(comingLeaders);
+  };
+  const updateMessage = (action) => {
+    let message = '';
+    switch (action) {
+      case 'waiting':
+        message = 'Waiting for another player to log on.';
+        break;
+      case 'selectedPlayer':
+        message = `You are playing against player: ${oponent}.`;
+        break;
+      case 'youArePlayer':
+        message = `I am the: ${IAmPlayer}.`;
+        break;
+      case 'computer':
+        message = `I am playing against the computer.`;
+        break;
+      case 'changedLeft':
+        message = `Your oponent let the room.`;
+        break;
+
+      default:
+        message = '';
+        break;
+    }
+    return message;
+  };
+
+  const connectGame = (incomingLeaders) => {
+    setLeaders(incomingLeaders);
+    setlogin(true);
+    console.log('connected the game');
     socketRef.current = io.connect('http://localhost:3000', {
       reconnectionDelay: 1000,
       reconnection: true,
@@ -28,92 +64,126 @@ const App = () => {
       upgrade: false,
       rejectUnauthorized: false
     });
-    socketRef.current.emit('join game', 'javier');
+
+    socketRef.current.on('receive-leader-board', showLeaderBoard);
+    console.log('connectGame emit-> get-leader-board');
+    socketRef.current.emit('get-leader-board');
+
+    console.log('name', name);
+    socketRef.current.emit('join game', name);
     socketRef.current.on('game joined', (gameInfo) => {
-      console.log('returned->gameInfo', gameInfo);
+      console.log('returned --->gameInfo', gameInfo);
       const { oponentPlayer, iAm } = gameInfo;
+      console.log(`received oponent --> ${oponentPlayer}`);
       console.log('player is ', gameInfo[iAm]);
+      setMyInfo(gameInfo[iAm]);
       setOponent(oponentPlayer);
-      // setPlayer(gameInfo[iAm]);
+      setIAM(iAm);
     });
-    const url = 'http://localhost:3000/leaderboard';
-    socketRef.current.on('leaderBoardReceived', (leaders) => {
-      console.log('here are the leaders', leaders);
+    socketRef.current.on('player-left', () => {
+      setOponent(false);
     });
-    FetchApi(url);
+    socketRef.current.on('disconnect', () => {
+      console.log('socketRef id', socketRef.current.id); // undefined
+    });
   };
 
   const disconnect = () => {
-    socketRef.current.disconnect();
+    socketRef.current.close();
   };
 
-  const comm = () => {
-    console.log('oponent', oponent);
-    socketRef.current.emit('send to player', oponent);
+  const togglePlayerType = () => {
+    if (againstComputer) {
+      console.log('toggling', againstComputer);
+      setAgainstComputer(false);
+      socketRef.current.emit('join game', myInfo.id);
+      connectGame();
+      // socketRef.current.emit();
+    } else {
+      // disconnect();
+      console.log('!againstComputer', againstComputer);
+      setAgainstComputer('computer');
+      socketRef.current.emit('inform-player-changed-room', oponent);
+      setOponent(false);
+    }
   };
 
-  const leaderBoard = () => {
-    console.log('geting-leader-board');
-    socketRef.current.emit('get-leader-board');
-    // setCoord(cor);
-  };
-
-  const showMess = (cor) => {
-    console.log('got from the player', cor);
-    // setCoord(cor);
-  };
-  const showLeaderBoard = (leaderText) => {
-    console.log('showLeaderBoard:-->>', leaderText);
+  const appendMessage = () => {
+    let m = '';
+    if (login) m += `${updateMessage('youArePlayer')}`;
+    if (login && !oponent) m += `, ${updateMessage('waiting')}`;
+    if (login && oponent) m += `, ${updateMessage('selectedPlayer')}`;
+    if (login && againstComputer) m += `, ${updateMessage('computer')}`;
+    // setMessage(m);
+    return m;
   };
 
   useEffect(() => {
-    console.log('use effect');
-    if (!socketRef.current) return;
-    socketRef.current.on('receive from player', showMess);
-    socketRef.current.on('receive-leader-board', showLeaderBoard);
+    if (!socketRef.current) {
+      console.log('useEffect--->');
+
+      return;
+    }
+    // socketRef.current.emit('get-leader-board');
+    // socketRef.current.on('receive from player', showMess);
+    // socketRef.current.on('receive-leader-board', showLeaderBoard);
     return () => {
-      socketRef.current.off('receive from player');
+      // console.log('exit-->');
+
+      // socketRef.current.off('get-leader-board');
+      // socketRef.current.off('receive from player');
       socketRef.current.off('receive-leader-board');
     };
-  }, [showMess, showLeaderBoard]);
+  }, [showLeaderBoard]);
 
   const submitLogin = (e) => {
     e.preventDefault();
     console.log('submit', name, password);
-    return { name, password };
+    // setlogin(true);
+    FetchApi(url, 'POST', connectGame, { name, password });
+  };
+  const logout = () => {
+    setlogin(false);
+    disconnect();
   };
 
   return (
     <div>
-      {console.log('render')}
-      <h1>App!</h1>
-      <input
-        type="text"
-        onChange={(e) => setName(e.target.value)}
-        placeholder="name"
-      />
-      <input
-        type="password"
-        htmlFor="password"
-        onChange={(e) => setPassword(e.target.value)}
-        placeholder="password"
-      />
-      <button type="button" id="password" onClick={submitLogin}>
-        Submit
-      </button>
-      <button type="button" onClick={() => connectGame()}>
-        Connect
-      </button>
-      <button type="button" onClick={() => disconnect()}>
-        Disconnect
-      </button>
-      <button type="button" onClick={() => comm()}>
-        Comm
-      </button>
-      <button type="button" onClick={() => leaderBoard()}>
-        leaderBoard
-      </button>
-      <TicTacToeGrid></TicTacToeGrid>
+      <section className="gameHeader">
+        Hi {myInfo && myInfo.playerName} Tic Tac Toe! {appendMessage()}
+      </section>
+
+      {!login && (
+        <Form
+          setName={setName}
+          submitLogin={submitLogin}
+          setPassword={setPassword}
+        />
+      )}
+      {login && (
+        <button type="button" onClick={() => togglePlayerType()}>
+          {againstComputer ? `Play Against Human` : `Play With Computer`}
+        </button>
+      )}
+      {login && (
+        <button type="button" onClick={() => logout()}>
+          logout
+        </button>
+      )}
+      {login && (
+        <>
+          <TicTacToeGrid
+            socketRef={socketRef}
+            oponentId={oponent || againstComputer}
+            IAmPlayer={IAmPlayer}
+          />
+        </>
+      )}
+      {login && (
+        <div className="leaderBoard">
+          <LeaderBoard leaders={leaders} />
+        </div>
+      )}
     </div>
   );
 };

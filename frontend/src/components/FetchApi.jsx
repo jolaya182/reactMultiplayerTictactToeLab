@@ -1,23 +1,29 @@
 // import { useState } from 'react';
 // import React from 'react';
 
-const FetchApi = (url) => {
+const FetchApi = (url, method, callBack, payload) => {
   const data = {
-    method: 'GET',
+    method,
     // body: JSON.stringify({ DATA: 'BEST' }),
     headers: { 'Content-Type': 'application/json; charset=utf-8' }
   };
-
-  // const response = JSON.parse((await fetch(url, data)).json);
+  if (method === 'POST') data.body = JSON.stringify(payload);
 
   fetch(url, data)
     .then((r) => {
       const rr = r.json();
       return rr;
     })
-    .then((j) => {
-      console.log('FOUND', j);
-      return j;
+    .then((incomingData) => {
+      console.log('incomingData', incomingData);
+      const leaders = incomingData.data;
+      if (Object.keys(leaders.length)) {
+        callBack(leaders);
+      } else {
+        console.log('false');
+        alert('Please insert a valid name or password');
+      }
+
     })
     .catch((err) => console.log('error->', err));
   // const result = JSON.parse(response);

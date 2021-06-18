@@ -18,15 +18,11 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 app.use((req, res, next) => {
-  // res.header('Content-Type', 'application/json; charset=utf-8');
-  // res.header('Access-Control-Allow-Methods', 'OPTIONS,GET,PUT,POST,DELETE');
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Headers', 'Content-Type');
   next();
 });
 
-// const newPort = 3000;
-// server.listen(newPort, () => console.log(`server is also on port ${newPort}`));
 const newP = 3000;
 const server = app.listen(newP, () => {
   console.log(`server listening port: ${newP}`);
@@ -42,14 +38,9 @@ const tempPlayers = [];
 const allPlayers = {};
 
 io.on('connection', (clientSocket) => {
-  console.log('connected!');
-  console.log('clientSocket # of rooms', clientSocket.rooms);
-
   clientSocket.join('tic-tact-toe-room');
 
   clientSocket.on('join game', (player) => {
-    console.log('join Game Request');
-    console.log('tempPlayers->', tempPlayers);
     const usersId = clientSocket.id;
     const user = {
       playerName: player,
@@ -57,13 +48,10 @@ io.on('connection', (clientSocket) => {
       oponentPlayer: null
     };
 
-    // @todo place an and. if the userId ex.
     if (tempPlayers.length % 2 !== 0) {
       const olderPlayer = tempPlayers.pop();
       const olderPlayerId = olderPlayer.id;
       const olderPlayerName = olderPlayer.playerName;
-      console.log('olderPlayer-->', olderPlayer);
-      // eslint-disable-next-line prettier/prettier
       const secondPlayer = {
         ...user,
         oponentPlayer: olderPlayerId,
@@ -85,15 +73,11 @@ io.on('connection', (clientSocket) => {
         iAm: 'secondPlayer'
       };
 
-      console.log('oldier', allPlayers[olderPlayerId]);
-      console.log('usier', allPlayers[usersId]);
       clientSocket.emit('game joined', allPlayers[usersId]);
       clientSocket
         .to(olderPlayerId)
         .emit('game joined', allPlayers[olderPlayerId]);
-      console.log('allPlayers', allPlayers);
     } else {
-      console.log('pushing in the user');
       const gameInfo = {
         ...user,
         oponentPlayer: null,
@@ -108,30 +92,23 @@ io.on('connection', (clientSocket) => {
       allPlayers[usersId] = gameInfo;
       tempPlayers.push(gameInfo);
     }
-    // console.log('tempPlayers ->', tempPlayers);
   });
 
   clientSocket.on('send to player', (id) => {
-    console.log('room', clientSocket.rooms);
-    console.log('id', id);
     clientSocket.broadcast
       .to(id)
       .emit('receive from player', { row: 0, col: 0 });
   });
 
   clientSocket.on('disconnect', () => {
-    console.log('disconect', clientSocket.id);
     const userId = clientSocket.id;
     const disconectedPlayer = allPlayers[userId];
     clientSocket.disconnect();
     if (!disconectedPlayer) return;
-    console.log('disconectedPlayer', disconectedPlayer);
 
     if (disconectedPlayer.oponentPlayer) {
       const { oponentPlayer } = disconectedPlayer;
-      console.log('oponentPlayer--->', oponentPlayer);
       const playerLeft = allPlayers[oponentPlayer];
-      console.log('playerLeft', playerLeft);
       const newPlayer = {
         ...playerLeft,
         oponentPlayer: null,
@@ -141,11 +118,7 @@ io.on('connection', (clientSocket) => {
       allPlayers[newPlayer.id] = newPlayer;
       delete allPlayers[userId];
       clientSocket.to(newPlayer.id).emit('player-left');
-      // check if any tempPlayers available and deque the player
-      // an pair the tempPlayer with the newPlayer
-      console.log('tempPlayers-->', tempPlayers);
       if (tempPlayers.length >= 1) {
-        console.log(`tempPlayers.length >= 1 ${tempPlayers.length >= 1}`);
         const nextPlayer = tempPlayers.pop();
         const nextPlayerId = nextPlayer.id;
         const nextPlayerOponentName = newPlayer.playerName;
@@ -185,28 +158,21 @@ io.on('connection', (clientSocket) => {
         tempPlayers.push(newPlayer);
       }
     } else {
-      // clear out the last player connected through sockets
       delete allPlayers[userId];
       tempPlayers.pop();
     }
-
-    console.log('discont remaining users', tempPlayers);
-    console.log('rooms', clientSocket.rooms);
-    console.log('allPlayers', allPlayers);
   });
 
-  clientSocket.on('get-leader-board', () => {
-    console.log('get-leader-board');
-    clientSocket.emit(`receive-leader-board`, `This is the leaderboard`);
-    clientSocket.broadcast
-      .to('tic-tact-toe-room')
-      .emit('receive-leader-board', 'This is the leaderboard');
-  });
+  // clientSocket.on('get-leader-board', () => {
+  //   clientSocket.emit(`receive-leader-board`, `This is the leaderboard`);
+  //   clientSocket.broadcast
+  //     .to('tic-tact-toe-room')
+  //     .emit('receive-leader-board', 'This is the leaderboard');
+  // });
 
   clientSocket.on(
     'send-grid',
     (playerId, gridMatrix, currentPlayer, winner, totalMarks, tie) => {
-      console.log('send-grid', playerId, gridMatrix);
       clientSocket
         .to(playerId)
         .emit(
@@ -220,15 +186,9 @@ io.on('connection', (clientSocket) => {
     }
   );
 
-  // clientSocket.on('inform-player-new-player-entered-the-room',()=>{
-
-  // } );
   clientSocket.on('inform-player-changed-room', (oponentId) => {
-    console.log('inform-player-changed-room', oponentId);
     clientSocket.to(oponentId).emit('player-left', 'changedLeft');
-    // place this player into the tempPlayer array
     tempPlayers.push(allPlayers[oponentId]);
-    console.log('oponentId', tempPlayers);
   });
 });
 db.run('PRAGMA foreign_keys=on');
@@ -242,60 +202,58 @@ db.run(
 let sql = '';
 const returnResults = (req, res) => {
   const { body } = req;
-  // console.log('returnResults', body);
-
+  console.log('returnResults', req.body);
   res.send({ data: body });
 };
 
 const checkForErrors = (req, res, next) => {
   const { body } = req;
   const { err, rows } = body;
-  // console.log('checkForErrors', body);
+  console.log('check error', body);
   if (err) {
     res.status(500).send({ error: body.message });
   } else {
     req.body = rows;
-    // returnResults(req, res);
-    // res.send({ data: body });
     next();
   }
 };
 
 const pullInLeaders = (req, res, next) => {
+  const rows = req.body;
   sql = `SELECT  users.name, leaderboard.userId, leaderboard.wins
   FROM users
   INNER JOIN leaderboard 
   ON users.userId = leaderboard.userId
   ORDER BY wins DESC
   LIMIT 10`;
-  db.all(sql, [], (err, rows) => {
-    req.body = { err, rows };
-    // console.log('rows', rows);
-    req.body = rows;
+
+  db.all(sql, [], (err, allLeaders) => {
+    req.body = { err, rows: { allLeaders, player: rows } };
     next();
   });
 };
 
 app.post(
   '/login',
-  (req, res, next) => {
-    console.log('went through get!!');
+  function (req, res, next) {
     const { name, password } = req.body;
-    sql = `SELECT name FROM users WHERE password='${password}' AND name='${name}'`;
-    db.all(sql, [], (err, rows) => {
-      req.body = { err, rows };
-      // console.log('rows', rows);
+    sql = `SELECT userId FROM users WHERE password='${password}' AND name='${name}'`;
+    console.log('name, password ', name, password);
+    db.all(sql, [], (err, player) => {
+      const playerId = player[0];
+      console.log('playerId', playerId);
+      req.body = { err, rows: [playerId] };
       next();
     });
   },
   checkForErrors,
   pullInLeaders,
+  checkForErrors,
   returnResults
 );
 app.get(
   '/',
   async (req, res, next) => {
-    console.log('went through get!!');
     sql = 'SELECT * FROM users';
     const result = await db.all(sql, [], (err, rows) => {
       if (err) {
@@ -305,54 +263,95 @@ app.get(
         next();
       }
     });
-    console.log('result', result);
   },
   returnResults
 );
 
-app.get(
+const callLeaderBoard = (req, res, next) => {
+  const rows = req.body;
+  sql = `SELECT  users.name, leaderboard.userId, leaderboard.wins
+    FROM users
+    INNER JOIN leaderboard 
+    ON users.userId = leaderboard.userId
+    ORDER BY wins DESC
+    LIMIT 10`;
+  db.all(sql, [], function (err, leaders) {
+    req.body = { err, rows: { allLeaders: leaders, player: rows } };
+    next();
+  });
+};
+
+app.post(
   '/create',
   (req, res, next) => {
-    const name = 'ja';
-    const password = 'pas';
+    const { name, password } = req.body;
+
     sql = `INSERT INTO users( name, password ) VALUES( '${name}', '${password}' )`;
     db.run(sql, [], function (err) {
-      if (err) {
-        res.status(500).send({ error: err.message });
-      } else {
-        req.body = this.lastID;
-        next();
-      }
+      req.body = { err, rows: [{ playerId: this.lastID }] };
+      next();
     });
   },
-  returnResults
-);
-
-app.get(
-  '/win',
-  (req, res, next) => {
-    const id = 13;
-    const wins = 13;
-    sql = `INSERT INTO leaderboard( userId, wins ) VALUES( '${id}', '${wins}' )`;
-    db.run(sql, [], function (err) {
-      if (err) {
-        res.status(500).send({ error: err.message });
-      } else {
-        req.body = this.lastID;
-        next();
-      }
-    });
-  },
+  checkForErrors,
+  callLeaderBoard,
+  checkForErrors,
   returnResults
 );
 
 const getLeaderBoard = (req, res, next) => {
   const { body } = req;
+  console.log('getLeaderBoard', body.allLeaders);
   io.to('tic-tact-toe-room').emit('receive-leader-board', body);
+  req.body = { rows: body };
   next();
 };
 
-// select top ten leaders with the highest wins
+const updateLeaderBoard = (req, res, next) => {
+  const { id, totalWins } = req.body;
+  console.log('updateLeaderBoard', req.body);
+  let wins;
+  if (totalWins.wins === 0) {
+    // insert
+    wins = totalWins.wins + 1;
+    sql = `INSERT INTO leaderboard( userId, wins ) VALUES( '${id}', '${wins}' )`;
+    db.run(sql, [], function (err) {
+      req.body = { err, rows: [] };
+      next();
+    });
+  } else {
+    // update
+    wins = totalWins.wins + 1;
+    sql = `UPDATE leaderboard SET  wins='${wins}' WHERE userId='${id}'`;
+    db.run(sql, [], function (err) {
+      req.body = { err, rows: [] };
+      next();
+    });
+  }
+};
+
+app.post(
+  '/win',
+  (req, res, next) => {
+    const { id } = req.body;
+    console.log('win', id);
+    sql = `SELECT wins FROM leaderboard WHERE userId='${id}'`;
+    db.all(sql, [], function (err, tw) {
+      const totalWins = tw[0] || { wins: 0 };
+      const rows = { id, totalWins };
+      req.body = { err, rows };
+      next();
+    });
+  },
+  checkForErrors,
+  updateLeaderBoard,
+  checkForErrors,
+  callLeaderBoard,
+  checkForErrors,
+  getLeaderBoard,
+  checkForErrors,
+  returnResults
+);
+
 app.get(
   '/leaderboard',
   (req, res, next) => {
@@ -372,11 +371,11 @@ app.get(
   returnResults
 );
 
-app.get(
+app.post(
   '/delete',
   (req, res, next) => {
-    const id = 12;
-
+    const id = JSON.stringify(req.body.id);
+    // const id = 4;
     sql = `DELETE FROM users WHERE userId = ${id}`;
     db.all(sql, [], (err) => {
       if (err) {

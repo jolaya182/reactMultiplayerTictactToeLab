@@ -16,14 +16,13 @@ const FetchApi = (url, method, callBack, payload) => {
     })
     .then((incomingData) => {
       console.log('incomingData', incomingData);
-      const leaders = incomingData.data;
-      if (Object.keys(leaders.length)) {
-        callBack(leaders);
+      const { allLeaders, player } = incomingData.data;
+      if (Object.keys(player.length)) {
+        callBack(allLeaders, player[0]);
       } else {
         console.log('false');
         alert('Please insert a valid name or password');
       }
-
     })
     .catch((err) => console.log('error->', err));
   // const result = JSON.parse(response);

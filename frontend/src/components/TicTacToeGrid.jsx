@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Row from './Row';
 
-const TicTacToeGrid = ({ socketRef, oponentId, IAmPlayer }) => {
+const TicTacToeGrid = ({ socketRef, oponentId, IAmPlayer, addWinner }) => {
   const [gridMatrix, setGridMatrix] = useState([
     [null, null, null],
     [null, null, null],
@@ -171,6 +171,7 @@ const TicTacToeGrid = ({ socketRef, oponentId, IAmPlayer }) => {
     setTotalMarks(newCount);
     if (isWinner()) {
       setWinner(currentPlayer);
+      addWinner();
       emitToPlayer(newGridMatrix, currentPlayer, currentPlayer, newCount, tie);
       return;
     }

@@ -3,14 +3,14 @@
 // @refresh reset
 import { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
-import immer from 'immer';
 import Form from './Form';
 import FetchApi from './FetchApi';
 import TicTacToeGrid from './TicTacToeGrid';
 import LeaderBoard from './LeaderBoard';
 
 const App = () => {
-  const url = 'http://localhost:3000/login';
+  const url = 'http://localhost:3000';
+  const [player, setPlayer] = useState(null);
   const [oponent, setOponent] = useState(false);
   const [oponentName, setOponentName] = useState(null);
   const socketRef = useRef();
@@ -24,7 +24,7 @@ const App = () => {
 
   const showLeaderBoard = (comingLeaders) => {
     console.log('geting-leader-board', comingLeaders);
-    // setLeaders(comingLeaders);
+    setLeaders(comingLeaders.allLeaders);
   };
   const updateMessage = (action) => {
     let message = '';
@@ -33,7 +33,7 @@ const App = () => {
         message = 'Waiting for another player to log on.';
         break;
       case 'selectedPlayer':
-        message = `You are playing against player: ${oponentName}.`;
+        message = `I am playing against player: ${oponentName}.`;
         break;
       case 'youArePlayer':
         message = `I am the: ${IAmPlayer}.`;
@@ -42,7 +42,7 @@ const App = () => {
         message = `I am playing against the computer.`;
         break;
       case 'changedLeft':
-        message = `Your oponent let the room.`;
+        message = `My oponent let the room.`;
         break;
 
       default:
@@ -52,7 +52,9 @@ const App = () => {
     return message;
   };
 
-  const connectGame = (incomingLeaders) => {
+  const connectGame = (incomingLeaders, incomingPlayer) => {
+    setPlayer(incomingPlayer.userId);
+    console.log('incomingLeaders', incomingLeaders);
     setLeaders(incomingLeaders);
     setlogin(true);
     console.log('connected the game');
@@ -129,7 +131,7 @@ const App = () => {
     }
     // socketRef.current.emit('get-leader-board');
     // socketRef.current.on('receive from player', showMess);
-    // socketRef.current.on('receive-leader-board', showLeaderBoard);
+    socketRef.current.on('receive-leader-board', showLeaderBoard);
     return () => {
       // console.log('exit-->');
 
@@ -143,8 +145,20 @@ const App = () => {
     e.preventDefault();
     console.log('submit', name, password);
     // setlogin(true);
-    FetchApi(url, 'POST', connectGame, { name, password });
+    FetchApi(`${url}/login`, 'POST', connectGame, { name, password });
   };
+
+  const signUp = (e) => {
+    e.preventDefault();
+    console.log('submit', name, password);
+    // setlogin(true);
+    FetchApi(`${url}/create`, 'POST', connectGame, { name, password });
+  };
+
+  const addWinner = () => {
+    FetchApi(`${url}/win`, 'POST', (f) => f, { id: player });
+  };
+
   const logout = () => {
     setlogin(false);
     setName(false);
@@ -163,6 +177,7 @@ const App = () => {
           setName={setName}
           submitLogin={submitLogin}
           setPassword={setPassword}
+          signUp={signUp}
         />
       )}
       {login && (
@@ -183,6 +198,7 @@ const App = () => {
               socketRef={socketRef}
               oponentId={oponent || againstComputer}
               IAmPlayer={IAmPlayer}
+              addWinner={addWinner}
             />
           </div>
         </div>

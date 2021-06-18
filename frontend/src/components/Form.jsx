@@ -1,6 +1,6 @@
 // @refresh reset
 // eslint-disable-next-line react/prop-types
-const Form = ({ setName, submitLogin, setPassword }) => {
+const Form = ({ setName, submitLogin, setPassword, signUp }) => {
   return (
     <div className="form-container">
       <div className="colu">
@@ -27,6 +27,9 @@ const Form = ({ setName, submitLogin, setPassword }) => {
         <div className="row">
           <button type="button" id="password" onClick={submitLogin}>
             Submit
+          </button>
+          <button type="button" id="signUp" onClick={signUp}>
+            Sign up
           </button>
         </div>
       </div>

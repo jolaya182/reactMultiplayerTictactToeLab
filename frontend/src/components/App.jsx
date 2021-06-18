@@ -67,7 +67,6 @@ const App = () => {
     });
 
     socketRef.current.on('receive-leader-board', showLeaderBoard);
-    console.log('connectGame emit-> get-leader-board');
     socketRef.current.emit('get-leader-board');
 
     console.log('name', name);

@@ -1,7 +1,7 @@
 # reactMultiplayerTictactToeLab
 
-Client application in where the user edits the flights listed.
-<img src="./frontEnd/images/t.gif" title="t"/>
+Client server application in where the user plays a game against the computer or the another person online.
+<img src="./frontend/images/t.gif" title="t"/>
 
 ## to get the repo:
 

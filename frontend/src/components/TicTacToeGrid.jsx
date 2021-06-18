@@ -1,8 +1,18 @@
 /* eslint-disable no-unused-expressions */
 /* eslint-disable react/prop-types */
+/**
+ * @Author: Javier Olaya
+ * @fileName: TicTacToeGrid.jsx
+ * @date: 6/18/2021
+ * @description: handles all the business logic of the tic tac toe application
+ */
 import { useEffect, useState } from 'react';
 import Row from './Row';
 
+/**
+ * @param {object, string, string, func} { socketRef, oponentId, IAmPlayer, addWinner }
+ * @return {html}
+ */
 const TicTacToeGrid = ({ socketRef, oponentId, IAmPlayer, addWinner }) => {
   const [gridMatrix, setGridMatrix] = useState([
     [null, null, null],
@@ -12,7 +22,6 @@ const TicTacToeGrid = ({ socketRef, oponentId, IAmPlayer, addWinner }) => {
 
   const firstPlayer = 'X';
   const secondPlayer = 'O';
-  console.log('IAmPlayer', IAmPlayer);
   const iAmPlayer = IAmPlayer === 'firstPlayer' ? firstPlayer : secondPlayer;
   const [currentPlayer, setCurrentPlayer] = useState(firstPlayer);
   const [winner, setWinner] = useState(false);
@@ -20,7 +29,6 @@ const TicTacToeGrid = ({ socketRef, oponentId, IAmPlayer, addWinner }) => {
   const [tie, setTie] = useState(false);
 
   const emitToPlayer = (newGridMatrix, cp, winr, tm, t) => {
-    console.log('oponent id -->');
     socketRef.current.emit(
       'send-grid',
       oponentId,
@@ -32,7 +40,6 @@ const TicTacToeGrid = ({ socketRef, oponentId, IAmPlayer, addWinner }) => {
     );
   };
   const receiveOponentsState = (grid, player, winr, totalM, ti) => {
-    // console.log('receive-grid', grid);
     setGridMatrix(grid);
     setCurrentPlayer(player);
     setWinner(winr);
@@ -128,8 +135,8 @@ const TicTacToeGrid = ({ socketRef, oponentId, IAmPlayer, addWinner }) => {
     emitToPlayer(newGridMatrix, firstPlayer, false, 0, false);
   };
 
+  // generate random coordinate
   const getNewPosition = () => {
-    // generate random coordinate
     const min = 0;
     const max = 3;
     const rowCordinate = Math.floor(Math.random() * (max - min) + min);
@@ -142,7 +149,6 @@ const TicTacToeGrid = ({ socketRef, oponentId, IAmPlayer, addWinner }) => {
     newGridMatrix[cord.row][cord.col] = newPlayer;
 
     // mark the square
-    // changePlayer(newPlayer);
     setGridMatrix(newGridMatrix);
     newCount = 1 + newCount;
     setTotalMarks(newCount);
@@ -179,23 +185,10 @@ const TicTacToeGrid = ({ socketRef, oponentId, IAmPlayer, addWinner }) => {
       setTie(true);
       return;
     }
-    // send the grid to the oponent
 
+    // send the grid to the oponent
     const newPlayer = changePlayer(currentPlayer);
     if (oponentId !== 'computer') {
-      console.log('computer->', oponentId);
-      // console.log(
-      //   'newGridMatrix',
-      //   newGridMatrix,
-      //   'newPlayer',
-      //   newPlayer,
-      //   'winner',
-      //   winner,
-      //   'newCount',
-      //   newCount,
-      //   'tie',
-      //   tie
-      // );
       emitToPlayer(newGridMatrix, newPlayer, winner, newCount, tie);
     } else {
       // eslint-disable-next-line no-lonely-if

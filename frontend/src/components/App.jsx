@@ -1,6 +1,12 @@
 /* eslint-disable consistent-return */
 /* eslint-disable react/react-in-jsx-scope */
 // @refresh reset
+/**
+ * @Author: Javier Olaya
+ * @fileName: App.jsx
+ * @date: 6/18/2021
+ * @description: main container for the tictactoe application the makes the api and socket calls
+ */
 import { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 import Form from './Form';
@@ -8,6 +14,10 @@ import FetchApi from './FetchApi';
 import TicTacToeGrid from './TicTacToeGrid';
 import LeaderBoard from './LeaderBoard';
 
+/**
+ *  main component that holds all component
+ * @return {html}
+ */
 const App = () => {
   const url = 'http://localhost:3000';
   const [player, setPlayer] = useState(null);
@@ -23,7 +33,6 @@ const App = () => {
   const [againstComputer, setAgainstComputer] = useState(false);
 
   const showLeaderBoard = (comingLeaders) => {
-    console.log('geting-leader-board', comingLeaders);
     setLeaders(comingLeaders.allLeaders);
   };
   const updateMessage = (action) => {
@@ -54,10 +63,8 @@ const App = () => {
 
   const connectGame = (incomingLeaders, incomingPlayer) => {
     setPlayer(incomingPlayer.userId);
-    console.log('incomingLeaders', incomingLeaders);
     setLeaders(incomingLeaders);
     setlogin(true);
-    console.log('connected the game');
     socketRef.current = io.connect('http://localhost:3000', {
       reconnectionDelay: 1000,
       reconnection: true,
@@ -71,24 +78,13 @@ const App = () => {
     socketRef.current.on('receive-leader-board', showLeaderBoard);
     socketRef.current.emit('get-leader-board');
 
-    console.log('name', name);
     socketRef.current.emit('join game', name);
     socketRef.current.on('game joined', (gameInfo) => {
-      console.log('returned --->gameInfo', gameInfo);
       const { oponentPlayer, oponentPlayerName, iAm, id } = gameInfo;
-      console.log(`received oponent --> ${oponentPlayer}`);
-      console.log('player is ', iAm);
       setMyInfo(id);
       setOponent(oponentPlayer);
       setOponentName(oponentPlayerName);
       setIAM(iAm);
-    });
-    socketRef.current.on('player-left', () => {
-      // setOponent(false);
-      // setIAM('firstPlayer');
-    });
-    socketRef.current.on('disconnect', () => {
-      console.log('socketRef id', socketRef.current.id); // undefined
     });
   };
 
@@ -98,15 +94,9 @@ const App = () => {
 
   const togglePlayerType = () => {
     if (againstComputer) {
-      console.log('toggling', againstComputer);
       setAgainstComputer(false);
       socketRef.current.emit('join game', myInfo);
-      // connectGame(leaders);
-      // socketRef.current.emit('inform-player-new-player-entered-the-room', oponent);
-      // socketRef.current.emit();
     } else {
-      // disconnect();
-      console.log('!againstComputer', againstComputer);
       setAgainstComputer('computer');
       socketRef.current.emit('inform-player-changed-room', oponent);
       setOponent(false);
@@ -119,39 +109,27 @@ const App = () => {
     if (login && !oponent) m += ` ${updateMessage('waiting')}`;
     if (login && oponent) m += ` ${updateMessage('selectedPlayer')}`;
     if (login && againstComputer) m += ` ${updateMessage('computer')}`;
-    // setMessage(m);
     return m;
   };
 
   useEffect(() => {
     if (!socketRef.current) {
-      console.log('useEffect--->');
-
       return;
     }
-    // socketRef.current.emit('get-leader-board');
-    // socketRef.current.on('receive from player', showMess);
+
     socketRef.current.on('receive-leader-board', showLeaderBoard);
     return () => {
-      // console.log('exit-->');
-
-      // socketRef.current.off('get-leader-board');
-      // socketRef.current.off('receive from player');
       socketRef.current.off('receive-leader-board');
     };
   }, [showLeaderBoard]);
 
   const submitLogin = (e) => {
     e.preventDefault();
-    console.log('submit', name, password);
-    // setlogin(true);
     FetchApi(`${url}/login`, 'POST', connectGame, { name, password });
   };
 
   const signUp = (e) => {
     e.preventDefault();
-    console.log('submit', name, password);
-    // setlogin(true);
     FetchApi(`${url}/create`, 'POST', connectGame, { name, password });
   };
 

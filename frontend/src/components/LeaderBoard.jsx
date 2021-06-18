@@ -1,4 +1,15 @@
 /* eslint-disable react/prop-types */
+/**
+ * @Author: Javier Olaya
+ * @fileName: LeaderBoard.jsx
+ * @date: 6/18/2021
+ * @description: displays the top ten ranked players
+ */
+/**
+ *
+ * @param {array} { leaders }
+ * @return {html}
+ */
 const LeaderBoard = ({ leaders }) => {
   return (
     <div>

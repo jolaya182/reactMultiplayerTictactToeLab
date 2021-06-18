@@ -1,5 +1,17 @@
+/* eslint-disable react/prop-types */
 // @refresh reset
 // eslint-disable-next-line react/prop-types
+/**
+ * @Author: Javier Olaya
+ * @fileName: Form.jsx
+ * @date: 6/18/2021
+ * @description: this handles the sign up and sign in form
+ */
+/**
+ *
+ * @param {func, func, func, func} { setName, submitLogin, setPassword, signUp }
+ * @return {html}
+ */
 const Form = ({ setName, submitLogin, setPassword, signUp }) => {
   return (
     <div className="form-container">

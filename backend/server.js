@@ -1,13 +1,16 @@
 /* eslint-disable func-names */
+/**
+ * @Author: Javier Olaya
+ * @fileName: server.js
+ * @date: 6/18/2021
+ * @description: Main backend application that makes calls to the database and manages the sockets
+ */
 const express = require('express');
 
 const app = express();
-// const http = require('https');
 
-// const server = http.createServer(app);
 const socket = require('socket.io');
 
-// const io = socket(server);
 const sqlite3 = require('sqlite3');
 const path = require('path');
 
@@ -163,13 +166,6 @@ io.on('connection', (clientSocket) => {
     }
   });
 
-  // clientSocket.on('get-leader-board', () => {
-  //   clientSocket.emit(`receive-leader-board`, `This is the leaderboard`);
-  //   clientSocket.broadcast
-  //     .to('tic-tact-toe-room')
-  //     .emit('receive-leader-board', 'This is the leaderboard');
-  // });
-
   clientSocket.on(
     'send-grid',
     (playerId, gridMatrix, currentPlayer, winner, totalMarks, tie) => {
@@ -202,14 +198,12 @@ db.run(
 let sql = '';
 const returnResults = (req, res) => {
   const { body } = req;
-  console.log('returnResults', req.body);
   res.send({ data: body });
 };
 
 const checkForErrors = (req, res, next) => {
   const { body } = req;
   const { err, rows } = body;
-  console.log('check error', body);
   if (err) {
     res.status(500).send({ error: body.message });
   } else {
@@ -238,10 +232,8 @@ app.post(
   function (req, res, next) {
     const { name, password } = req.body;
     sql = `SELECT userId FROM users WHERE password='${password}' AND name='${name}'`;
-    console.log('name, password ', name, password);
     db.all(sql, [], (err, player) => {
       const playerId = player[0];
-      console.log('playerId', playerId);
       req.body = { err, rows: [playerId] };
       next();
     });
@@ -253,9 +245,9 @@ app.post(
 );
 app.get(
   '/',
-  async (req, res, next) => {
+  (req, res, next) => {
     sql = 'SELECT * FROM users';
-    const result = await db.all(sql, [], (err, rows) => {
+    db.all(sql, [], (err, rows) => {
       if (err) {
         res.status(500).send({ error: err.message });
       } else {
@@ -288,7 +280,7 @@ app.post(
 
     sql = `INSERT INTO users( name, password ) VALUES( '${name}', '${password}' )`;
     db.run(sql, [], function (err) {
-      req.body = { err, rows: [{ playerId: this.lastID }] };
+      req.body = { err, rows: [{ userId: this.lastID }] };
       next();
     });
   },
@@ -300,7 +292,6 @@ app.post(
 
 const getLeaderBoard = (req, res, next) => {
   const { body } = req;
-  console.log('getLeaderBoard', body.allLeaders);
   io.to('tic-tact-toe-room').emit('receive-leader-board', body);
   req.body = { rows: body };
   next();
@@ -308,7 +299,6 @@ const getLeaderBoard = (req, res, next) => {
 
 const updateLeaderBoard = (req, res, next) => {
   const { id, totalWins } = req.body;
-  console.log('updateLeaderBoard', req.body);
   let wins;
   if (totalWins.wins === 0) {
     // insert
@@ -333,7 +323,6 @@ app.post(
   '/win',
   (req, res, next) => {
     const { id } = req.body;
-    console.log('win', id);
     sql = `SELECT wins FROM leaderboard WHERE userId='${id}'`;
     db.all(sql, [], function (err, tw) {
       const totalWins = tw[0] || { wins: 0 };
@@ -375,7 +364,6 @@ app.post(
   '/delete',
   (req, res, next) => {
     const id = JSON.stringify(req.body.id);
-    // const id = 4;
     sql = `DELETE FROM users WHERE userId = ${id}`;
     db.all(sql, [], (err) => {
       if (err) {

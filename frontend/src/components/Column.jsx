@@ -5,8 +5,8 @@
  * @date: 6/18/2021
  * @description: individual box for the tic tac toe box
  */
+
 /**
- *
  * @param {string, func, obj} { letter, markSquare, coord }
  * @return {html}
  */

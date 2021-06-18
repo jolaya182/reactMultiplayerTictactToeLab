@@ -43,7 +43,7 @@ const App = () => {
   /**
    * changes the messages on the top part of the application
    * @param {string} action
-   * @return {string} 
+   * @return {string}
    */
   const updateMessage = (action) => {
     let message = '';

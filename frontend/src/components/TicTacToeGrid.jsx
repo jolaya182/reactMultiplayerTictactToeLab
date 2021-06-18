@@ -29,13 +29,13 @@ const TicTacToeGrid = ({ socketRef, oponentId, IAmPlayer, addWinner }) => {
   const [tie, setTie] = useState(false);
 
   /**
-   *
-   *
-   * @param {*} newGridMatrix
-   * @param {*} cp
-   * @param {*} winr
-   * @param {*} tm
-   * @param {*} t
+   * helper function to send messages or data to the
+   * oponent player and updates their game props
+   * @param {array} newGridMatrix
+   * @param {string} cp
+   * @param {string} winr
+   * @param {integer} tm
+   * @param {string} t
    */
   const emitToPlayer = (newGridMatrix, cp, winr, tm, t) => {
     socketRef.current.emit(
@@ -48,14 +48,15 @@ const TicTacToeGrid = ({ socketRef, oponentId, IAmPlayer, addWinner }) => {
       t
     );
   };
+
   /**
-   *
-   *
-   * @param {*} grid
-   * @param {*} player
-   * @param {*} winr
-   * @param {*} totalM
-   * @param {*} ti
+   * helper function that accepts messages from the oponent
+   * player and updates game props
+   * @param {array} grid
+   * @param {string} player
+   * @param {string} winr
+   * @param {string totalM
+   * @param {integer} ti
    */
   const receiveOponentsState = (grid, player, winr, totalM, ti) => {
     setGridMatrix(grid);
@@ -66,18 +67,17 @@ const TicTacToeGrid = ({ socketRef, oponentId, IAmPlayer, addWinner }) => {
   };
 
   /**
-   *
-   *
-   * @param {*} newCount
-   * @return {*}
+   * verifys if all squares are filled
+   * @param {integer} newCount
+   * @return {integer}
    */
   const isTie = (newCount) => {
     return newCount >= 9;
   };
+
   /**
-   *
-   *
-   * @return {*}
+   * check game state for a winner
+   * @return {bool}
    */
   const isWinner = () => {
     const winningSquares = [
@@ -141,19 +141,17 @@ const TicTacToeGrid = ({ socketRef, oponentId, IAmPlayer, addWinner }) => {
   };
 
   /**
-   *
-   *
-   * @param {*} { row, col }
-   * @return {*}
+   * checks of the space on the grid is taken
+   * @param {integer, integer} { row, col }
+   * @return {bool}
    */
   const isSquareMarked = ({ row, col }) => {
     return gridMatrix[row][col] !== null;
   };
 
   /**
-   *
-   *
-   * @return {*}
+   *  switches the players turn
+   * @return {string}
    */
   const changePlayer = () => {
     const newPlayer = currentPlayer === 'X' ? secondPlayer : firstPlayer;
@@ -162,8 +160,7 @@ const TicTacToeGrid = ({ socketRef, oponentId, IAmPlayer, addWinner }) => {
   };
 
   /**
-   *
-   *
+   * sets all the games props to defaut values
    */
   const resetGame = () => {
     const newGridMatrix = [
@@ -179,11 +176,10 @@ const TicTacToeGrid = ({ socketRef, oponentId, IAmPlayer, addWinner }) => {
     emitToPlayer(newGridMatrix, firstPlayer, false, 0, false);
   };
 
-  // generate random coordinate
   /**
+   * generate random coordinate
    *
-   *
-   * @return {*}
+   * @return {obj}
    */
   const getNewPosition = () => {
     const min = 0;
@@ -194,12 +190,12 @@ const TicTacToeGrid = ({ socketRef, oponentId, IAmPlayer, addWinner }) => {
   };
 
   /**
-   *
-   *
-   * @param {*} cord
-   * @param {*} newPlayer
-   * @param {*} newCount
-   * @return {*}
+   * this function acts as the computer playing the game by
+   * placing random marks on availables grid spaces
+   * @param {obj} cord
+   * @param {string} newPlayer
+   * @param {integer} newCount
+   * @return
    */
   const computerMark = (cord, newPlayer, newCount) => {
     const newGridMatrix = [...gridMatrix];
@@ -222,10 +218,9 @@ const TicTacToeGrid = ({ socketRef, oponentId, IAmPlayer, addWinner }) => {
   };
 
   /**
-   *
-   *
-   * @param {*} cord
-   * @return {*}
+   * fires when the player clicks on the square to mark it
+   * @param {obj} cord
+   * @return
    */
   const markSquare = (cord) => {
     if (oponentId !== 'computer' && iAmPlayer !== currentPlayer) return;

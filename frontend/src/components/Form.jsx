@@ -7,6 +7,7 @@
  * @date: 6/18/2021
  * @description: this handles the sign up and sign in form
  */
+
 /**
  *
  * @param {func, func, func, func} { setName, submitLogin, setPassword, signUp }

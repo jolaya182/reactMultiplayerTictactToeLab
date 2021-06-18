@@ -40,9 +40,11 @@ const io = socket(server, cors);
 const tempPlayers = [];
 const allPlayers = {};
 
+// sets up all the communication between the server and the client
 io.on('connection', (clientSocket) => {
   clientSocket.join('tic-tact-toe-room');
 
+  // main socket to add a new player to the game
   clientSocket.on('join game', (player) => {
     const usersId = clientSocket.id;
     const user = {
@@ -97,12 +99,14 @@ io.on('connection', (clientSocket) => {
     }
   });
 
+  // main socket to communicate the coordinates the player is marking
   clientSocket.on('send to player', (id) => {
     clientSocket.broadcast
       .to(id)
       .emit('receive from player', { row: 0, col: 0 });
   });
 
+  // disconnects player that leaves or logs and automatically joins any waiting player
   clientSocket.on('disconnect', () => {
     const userId = clientSocket.id;
     const disconectedPlayer = allPlayers[userId];
@@ -166,6 +170,7 @@ io.on('connection', (clientSocket) => {
     }
   });
 
+  // sends the grid to the other player to update the game state
   clientSocket.on(
     'send-grid',
     (playerId, gridMatrix, currentPlayer, winner, totalMarks, tie) => {
@@ -182,6 +187,7 @@ io.on('connection', (clientSocket) => {
     }
   );
 
+  // informs the player that is still playing that his/her opoenent has left
   clientSocket.on('inform-player-changed-room', (oponentId) => {
     clientSocket.to(oponentId).emit('player-left', 'changedLeft');
     tempPlayers.push(allPlayers[oponentId]);
@@ -196,11 +202,18 @@ db.run(
 );
 
 let sql = '';
+/**
+ * helper funciton that returns the data to the client
+ */
 const returnResults = (req, res) => {
   const { body } = req;
   res.send({ data: body });
 };
 
+/**
+ * helper function that finds any error that the query
+ * produced
+ */
 const checkForErrors = (req, res, next) => {
   const { body } = req;
   const { err, rows } = body;
@@ -212,6 +225,9 @@ const checkForErrors = (req, res, next) => {
   }
 };
 
+/**
+ * querys who are the top ranked players
+ */
 const pullInLeaders = (req, res, next) => {
   const rows = req.body;
   sql = `SELECT  users.name, leaderboard.userId, leaderboard.wins
@@ -259,6 +275,9 @@ app.get(
   returnResults
 );
 
+/**
+ * helper function querys who are the top ranked players
+ */
 const callLeaderBoard = (req, res, next) => {
   const rows = req.body;
   sql = `SELECT  users.name, leaderboard.userId, leaderboard.wins
@@ -297,6 +316,9 @@ const getLeaderBoard = (req, res, next) => {
   next();
 };
 
+/**
+ * inserts new win for the victorious player
+ */
 const updateLeaderBoard = (req, res, next) => {
   const { id, totalWins } = req.body;
   let wins;

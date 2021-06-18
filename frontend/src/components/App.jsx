@@ -32,9 +32,19 @@ const App = () => {
   const [leaders, setLeaders] = useState(false);
   const [againstComputer, setAgainstComputer] = useState(false);
 
+  /**
+   * handles incoming top ranked leaders on the leaderboard
+   * @param {array} comingLeaders
+   */
   const showLeaderBoard = (comingLeaders) => {
     setLeaders(comingLeaders.allLeaders);
   };
+
+  /**
+   * changes the messages on the top part of the application
+   * @param {string} action
+   * @return {string} 
+   */
   const updateMessage = (action) => {
     let message = '';
     switch (action) {
@@ -61,6 +71,11 @@ const App = () => {
     return message;
   };
 
+  /**
+   *  initiate the sockets for the game and receives the data sent by the server
+   * @param {array} incomingLeaders
+   * @param {obj} incomingPlayer
+   */
   const connectGame = (incomingLeaders, incomingPlayer) => {
     setPlayer(incomingPlayer.userId);
     setLeaders(incomingLeaders);
@@ -88,10 +103,17 @@ const App = () => {
     });
   };
 
+  /**
+   *  simply closes the socket connection between the server and the browser
+   */
   const disconnect = () => {
     socketRef.current.close();
   };
 
+  /**
+   * changes the type of player. it changes from playing with the computer
+   * and a human
+   */
   const togglePlayerType = () => {
     if (againstComputer) {
       setAgainstComputer(false);
@@ -103,6 +125,11 @@ const App = () => {
     }
   };
 
+  /**
+   * builds the game message depending on the log and if it has
+   * been paired with another player
+   * @return {string}
+   */
   const appendMessage = () => {
     let m = '';
     if (login) m += `${updateMessage('youArePlayer')}`;
@@ -123,20 +150,34 @@ const App = () => {
     };
   }, [showLeaderBoard]);
 
+  /**
+   * sends login credentials to the server after submiting the form
+   * @param {event} e
+   */
   const submitLogin = (e) => {
     e.preventDefault();
     FetchApi(`${url}/login`, 'POST', connectGame, { name, password });
   };
 
+  /**
+   * Sends credentials to the server to create a player
+   * @param {event} e
+   */
   const signUp = (e) => {
     e.preventDefault();
     FetchApi(`${url}/create`, 'POST', connectGame, { name, password });
   };
 
+  /**
+   * send the server the winner to update the player scores
+   */
   const addWinner = () => {
     FetchApi(`${url}/win`, 'POST', (f) => f, { id: player });
   };
 
+  /**
+   * reset all player's prop and credentials
+   */
   const logout = () => {
     setlogin(false);
     setName(false);

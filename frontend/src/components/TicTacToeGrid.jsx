@@ -28,6 +28,15 @@ const TicTacToeGrid = ({ socketRef, oponentId, IAmPlayer, addWinner }) => {
   const [totalMarks, setTotalMarks] = useState(0);
   const [tie, setTie] = useState(false);
 
+  /**
+   *
+   *
+   * @param {*} newGridMatrix
+   * @param {*} cp
+   * @param {*} winr
+   * @param {*} tm
+   * @param {*} t
+   */
   const emitToPlayer = (newGridMatrix, cp, winr, tm, t) => {
     socketRef.current.emit(
       'send-grid',
@@ -39,6 +48,15 @@ const TicTacToeGrid = ({ socketRef, oponentId, IAmPlayer, addWinner }) => {
       t
     );
   };
+  /**
+   *
+   *
+   * @param {*} grid
+   * @param {*} player
+   * @param {*} winr
+   * @param {*} totalM
+   * @param {*} ti
+   */
   const receiveOponentsState = (grid, player, winr, totalM, ti) => {
     setGridMatrix(grid);
     setCurrentPlayer(player);
@@ -47,9 +65,20 @@ const TicTacToeGrid = ({ socketRef, oponentId, IAmPlayer, addWinner }) => {
     setTie(ti);
   };
 
+  /**
+   *
+   *
+   * @param {*} newCount
+   * @return {*}
+   */
   const isTie = (newCount) => {
     return newCount >= 9;
   };
+  /**
+   *
+   *
+   * @return {*}
+   */
   const isWinner = () => {
     const winningSquares = [
       [
@@ -111,16 +140,31 @@ const TicTacToeGrid = ({ socketRef, oponentId, IAmPlayer, addWinner }) => {
     return winnerFound;
   };
 
+  /**
+   *
+   *
+   * @param {*} { row, col }
+   * @return {*}
+   */
   const isSquareMarked = ({ row, col }) => {
     return gridMatrix[row][col] !== null;
   };
 
+  /**
+   *
+   *
+   * @return {*}
+   */
   const changePlayer = () => {
     const newPlayer = currentPlayer === 'X' ? secondPlayer : firstPlayer;
     setCurrentPlayer(newPlayer);
     return newPlayer;
   };
 
+  /**
+   *
+   *
+   */
   const resetGame = () => {
     const newGridMatrix = [
       [null, null, null],
@@ -136,6 +180,11 @@ const TicTacToeGrid = ({ socketRef, oponentId, IAmPlayer, addWinner }) => {
   };
 
   // generate random coordinate
+  /**
+   *
+   *
+   * @return {*}
+   */
   const getNewPosition = () => {
     const min = 0;
     const max = 3;
@@ -144,6 +193,14 @@ const TicTacToeGrid = ({ socketRef, oponentId, IAmPlayer, addWinner }) => {
     return { row: rowCordinate, col: colCordinate };
   };
 
+  /**
+   *
+   *
+   * @param {*} cord
+   * @param {*} newPlayer
+   * @param {*} newCount
+   * @return {*}
+   */
   const computerMark = (cord, newPlayer, newCount) => {
     const newGridMatrix = [...gridMatrix];
     newGridMatrix[cord.row][cord.col] = newPlayer;
@@ -164,6 +221,12 @@ const TicTacToeGrid = ({ socketRef, oponentId, IAmPlayer, addWinner }) => {
     setCurrentPlayer(newPlayer === 'X' ? secondPlayer : firstPlayer);
   };
 
+  /**
+   *
+   *
+   * @param {*} cord
+   * @return {*}
+   */
   const markSquare = (cord) => {
     if (oponentId !== 'computer' && iAmPlayer !== currentPlayer) return;
     if (isSquareMarked(cord)) return;

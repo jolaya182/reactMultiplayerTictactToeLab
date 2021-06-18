@@ -25,9 +25,13 @@ const FetchApi = (url, method, callBack, payload) => {
       return rr;
     })
     .then((incomingData) => {
+      console.log('incomingData', incomingData);
       const { allLeaders, player } = incomingData.data;
       if (Object.keys(player.length)) {
-        callBack(allLeaders, player[0]);
+        const history = incomingData.data.history
+          ? incomingData.data.history
+          : [];
+        callBack(allLeaders, player[0], history);
       } else {
         alert('Please insert a valid name or password');
       }

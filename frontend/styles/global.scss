@@ -13,7 +13,7 @@ main {
 }
 
 button {
-  font-size: 1.5rem;
+  font-size: 1.2rem;
 }
 
 input[type=text], input[type=password]{
@@ -22,7 +22,6 @@ input[type=text], input[type=password]{
 }
 
 .grid{
-  // margin:auto;
   width: 75%;
   display: flex;
   flex-direction: column;
@@ -49,7 +48,6 @@ input[type=text], input[type=password]{
 .colu{
   display: flex;
   flex-direction: column;
-  // align-items: center;
   margin:0;
   width:350px;
   height: 150px;
@@ -62,7 +60,6 @@ input[type=text], input[type=password]{
   flex-direction: column;
   text-align: center;
   font-size: 1.3rem;
-  // border: var(--commonLine)
 }
 
 .gameHeader{
@@ -71,7 +68,6 @@ input[type=text], input[type=password]{
   flex-direction: column;
   text-align: center;
   margin: 0;
-  // width: 95%;
 }
 
 .appContainer{

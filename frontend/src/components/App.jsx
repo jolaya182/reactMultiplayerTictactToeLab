@@ -13,6 +13,7 @@ import Form from './Form';
 import FetchApi from './FetchApi';
 import TicTacToeGrid from './TicTacToeGrid';
 import LeaderBoard from './LeaderBoard';
+import History from './History';
 
 /**
  *  main component that holds all component
@@ -20,6 +21,8 @@ import LeaderBoard from './LeaderBoard';
  */
 const App = () => {
   const url = 'http://localhost:3000';
+  const [oponentIdGa, setOponentIdGa] = useState(false);
+  const [history, setHistory] = useState([]);
   const [player, setPlayer] = useState(null);
   const [oponent, setOponent] = useState(false);
   const [oponentName, setOponentName] = useState(null);
@@ -76,7 +79,9 @@ const App = () => {
    * @param {array} incomingLeaders
    * @param {obj} incomingPlayer
    */
-  const connectGame = (incomingLeaders, incomingPlayer) => {
+  const connectGame = (incomingLeaders, incomingPlayer, newhistory) => {
+    console.log('newhistory', newhistory);
+    if (newhistory.length > 0) setHistory(newhistory);
     setPlayer(incomingPlayer.userId);
     setLeaders(incomingLeaders);
     setlogin(true);
@@ -172,7 +177,10 @@ const App = () => {
    * send the server the winner to update the player scores
    */
   const addWinner = () => {
-    FetchApi(`${url}/win`, 'POST', (f) => f, { id: player });
+    FetchApi(`${url}/win`, 'POST', (f) => f, {
+      winnerId: player,
+      loserId: oponentIdGa
+    });
   };
 
   /**
@@ -184,6 +192,10 @@ const App = () => {
     setOponent(false);
     setMyInfo(false);
     disconnect();
+  };
+
+  const setOponentIdGame = (oponentGameId) => {
+    setOponentIdGa(oponentGameId);
   };
 
   return (
@@ -212,12 +224,17 @@ const App = () => {
               <button type="button" onClick={() => togglePlayerType()}>
                 {againstComputer ? `Human` : `Computer`}
               </button>
+              <div>
+                <History history={history} />
+              </div>
             </div>
             <TicTacToeGrid
               socketRef={socketRef}
               oponentId={oponent || againstComputer}
               IAmPlayer={IAmPlayer}
               addWinner={addWinner}
+              gamePlayer={player}
+              setOponentIdGame={setOponentIdGame}
             />
           </div>
         </div>

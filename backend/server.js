@@ -173,7 +173,15 @@ io.on('connection', (clientSocket) => {
   // sends the grid to the other player to update the game state
   clientSocket.on(
     'send-grid',
-    (playerId, gridMatrix, currentPlayer, winner, totalMarks, tie) => {
+    (
+      playerId,
+      gridMatrix,
+      currentPlayer,
+      winner,
+      totalMarks,
+      tie,
+      gamePlayer
+    ) => {
       clientSocket
         .to(playerId)
         .emit(
@@ -182,7 +190,8 @@ io.on('connection', (clientSocket) => {
           currentPlayer,
           winner,
           totalMarks,
-          tie
+          tie,
+          gamePlayer
         );
     }
   );
@@ -201,12 +210,19 @@ db.run(
   'CREATE TABLE IF NOT EXISTS leaderboard (userId INTEGER, wins INTEGER,  FOREIGN KEY(userId) REFERENCES users(userId) ON DELETE CASCADE )'
 );
 
+// db.run('DROP TABLE history');
+
+db.run(
+  'CREATE TABLE IF NOT EXISTS history (winnerId INTEGER, loserId INTEGER,  FOREIGN KEY(winnerId) REFERENCES users(userId) ON DELETE CASCADE )'
+);
+
 let sql = '';
 /**
  * helper funciton that returns the data to the client
  */
 const returnResults = (req, res) => {
   const { body } = req;
+  console.log('returnResults', body);
   res.send({ data: body });
 };
 
@@ -218,6 +234,7 @@ const checkForErrors = (req, res, next) => {
   const { body } = req;
   const { err, rows } = body;
   if (err) {
+    console.log('checkForErrors', body);
     res.status(500).send({ error: body.message });
   } else {
     req.body = rows;
@@ -243,6 +260,81 @@ const pullInLeaders = (req, res, next) => {
   });
 };
 
+/**
+ * helper function querys who are the top ranked players
+ */
+const callLeaderBoard = (req, res, next) => {
+  const { player, history } = req.body;
+  console.log('callLeaderBoard,', req.body);
+  sql = `SELECT  users.name, leaderboard.userId, leaderboard.wins
+    FROM users
+    INNER JOIN leaderboard 
+    ON users.userId = leaderboard.userId
+    ORDER BY wins DESC
+    LIMIT 10`;
+  db.all(sql, [], function (err, leaders) {
+    req.body = { err, rows: { allLeaders: leaders, player, history } };
+    next();
+  });
+};
+
+const getLeaderBoard = (req, res, next) => {
+  const { body } = req;
+  console.log('getLeaderBoard,', body);
+  io.to('tic-tact-toe-room').emit('receive-leader-board', body);
+  req.body = { rows: body };
+  next();
+};
+
+/**
+ * inserts new win for the victorious player
+ */
+const updateLeaderBoard = (req, res, next) => {
+  const { winnerId, totalWins, history } = req.body;
+  console.log('updateLeaderBoard', req.body);
+  let wins;
+  if (totalWins.wins === 0) {
+    // insert
+    wins = totalWins.wins + 1;
+    sql = `INSERT INTO leaderboard( userId, wins ) VALUES( '${winnerId}', '${wins}' )`;
+    db.run(sql, [], function (err) {
+      req.body = { err, rows: { player: [{ userId: this.lastID }], history } };
+      next();
+    });
+  } else {
+    // update
+    wins = totalWins.wins + 1;
+    sql = `UPDATE leaderboard SET  wins='${wins}' WHERE userId='${winnerId}'`;
+    db.run(sql, [], function (err) {
+      req.body = { err, rows: { player: [{ userId: this.lastID }], history } };
+      next();
+    });
+  }
+};
+
+const getHistory = (req, res, next) => {
+  console.log('getHistory', req.body);
+  sql = `SELECT * FROM history`;
+  db.all(sql, [], function (err, history) {
+    console.log('tw', history);
+    req.body.history = history;
+    req.body = { err, rows: req.body };
+    next();
+  });
+};
+
+const insertHistory = (req, res, next) => {
+  const { winnerId, loserId } = req.body;
+  console.log('insertHistory', req.body);
+  //  1sql = `INSERT INTO leaderboard( userId, wins ) VALUES( '${winnerId}', '${wins}' )`;
+  sql = `INSERT INTO history(winnerId, loserId) VALUES('${winnerId}','${loserId}' )`;
+  db.run(sql, [], function (err, tw) {
+    console.log('tw', tw);
+    req.body = { err, rows: req.body };
+    next();
+  });
+};
+
 app.post(
   '/login',
   function (req, res, next) {
@@ -257,8 +349,11 @@ app.post(
   checkForErrors,
   pullInLeaders,
   checkForErrors,
+  getHistory,
+  checkForErrors,
   returnResults
 );
+
 app.get(
   '/',
   (req, res, next) => {
@@ -275,22 +370,32 @@ app.get(
   returnResults
 );
 
-/**
- * helper function querys who are the top ranked players
- */
-const callLeaderBoard = (req, res, next) => {
-  const rows = req.body;
-  sql = `SELECT  users.name, leaderboard.userId, leaderboard.wins
-    FROM users
-    INNER JOIN leaderboard 
-    ON users.userId = leaderboard.userId
-    ORDER BY wins DESC
-    LIMIT 10`;
-  db.all(sql, [], function (err, leaders) {
-    req.body = { err, rows: { allLeaders: leaders, player: rows } };
-    next();
-  });
-};
+app.post(
+  '/win',
+  (req, res, next) => {
+    const { winnerId, loserId } = req.body;
+    sql = `SELECT wins FROM leaderboard WHERE userId='${winnerId}'`;
+    db.all(sql, [], function (err, tw) {
+      console.log('totalWins', tw);
+      const totalWins = tw[0] || { wins: 0 };
+      const rows = { winnerId, totalWins, loserId };
+      req.body = { err, rows };
+      next();
+    });
+  },
+  checkForErrors,
+  insertHistory,
+  checkForErrors,
+  getHistory,
+  checkForErrors,
+  updateLeaderBoard,
+  checkForErrors,
+  callLeaderBoard,
+  checkForErrors,
+  getLeaderBoard,
+  checkForErrors,
+  returnResults
+);
 
 app.post(
   '/create',
@@ -305,60 +410,6 @@ app.post(
   },
   checkForErrors,
   callLeaderBoard,
-  checkForErrors,
-  returnResults
-);
-
-const getLeaderBoard = (req, res, next) => {
-  const { body } = req;
-  io.to('tic-tact-toe-room').emit('receive-leader-board', body);
-  req.body = { rows: body };
-  next();
-};
-
-/**
- * inserts new win for the victorious player
- */
-const updateLeaderBoard = (req, res, next) => {
-  const { id, totalWins } = req.body;
-  let wins;
-  if (totalWins.wins === 0) {
-    // insert
-    wins = totalWins.wins + 1;
-    sql = `INSERT INTO leaderboard( userId, wins ) VALUES( '${id}', '${wins}' )`;
-    db.run(sql, [], function (err) {
-      req.body = { err, rows: [] };
-      next();
-    });
-  } else {
-    // update
-    wins = totalWins.wins + 1;
-    sql = `UPDATE leaderboard SET  wins='${wins}' WHERE userId='${id}'`;
-    db.run(sql, [], function (err) {
-      req.body = { err, rows: [] };
-      next();
-    });
-  }
-};
-
-app.post(
-  '/win',
-  (req, res, next) => {
-    const { id } = req.body;
-    sql = `SELECT wins FROM leaderboard WHERE userId='${id}'`;
-    db.all(sql, [], function (err, tw) {
-      const totalWins = tw[0] || { wins: 0 };
-      const rows = { id, totalWins };
-      req.body = { err, rows };
-      next();
-    });
-  },
-  checkForErrors,
-  updateLeaderBoard,
-  checkForErrors,
-  callLeaderBoard,
-  checkForErrors,
-  getLeaderBoard,
   checkForErrors,
   returnResults
 );
@@ -396,6 +447,20 @@ app.post(
       }
     });
   },
+  returnResults
+);
+
+app.get(
+  '/history',
+  (req, res, next) => {
+    sql = `SELECT * FROM history`;
+    db.all(sql, [], function (err, history) {
+      console.log('history', history);
+      req.body = { err, rows: history };
+      next();
+    });
+  },
+  checkForErrors,
   returnResults
 );
 

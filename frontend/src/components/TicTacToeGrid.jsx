@@ -10,10 +10,18 @@ import { useEffect, useState } from 'react';
 import Row from './Row';
 
 /**
- * @param {object, string, string, func} { socketRef, oponentId, IAmPlayer, addWinner }
+ * @param {object, string, string, func, integer, func} { socketRef, oponentId, IAmPlayer, addWinner, gamePlayer,
+  setOponentIdGame }
  * @return {html}
  */
-const TicTacToeGrid = ({ socketRef, oponentId, IAmPlayer, addWinner }) => {
+const TicTacToeGrid = ({
+  socketRef,
+  oponentId,
+  IAmPlayer,
+  addWinner,
+  gamePlayer,
+  setOponentIdGame
+}) => {
   const [gridMatrix, setGridMatrix] = useState([
     [null, null, null],
     [null, null, null],
@@ -37,7 +45,7 @@ const TicTacToeGrid = ({ socketRef, oponentId, IAmPlayer, addWinner }) => {
    * @param {integer} tm
    * @param {string} t
    */
-  const emitToPlayer = (newGridMatrix, cp, winr, tm, t) => {
+  const emitToPlayer = (newGridMatrix, cp, winr, tm, t, gp) => {
     socketRef.current.emit(
       'send-grid',
       oponentId,
@@ -45,7 +53,8 @@ const TicTacToeGrid = ({ socketRef, oponentId, IAmPlayer, addWinner }) => {
       cp,
       winr,
       tm,
-      t
+      t,
+      gp
     );
   };
 
@@ -58,12 +67,13 @@ const TicTacToeGrid = ({ socketRef, oponentId, IAmPlayer, addWinner }) => {
    * @param {string totalM
    * @param {integer} ti
    */
-  const receiveOponentsState = (grid, player, winr, totalM, ti) => {
+  const receiveOponentsState = (grid, player, winr, totalM, ti, gamPl) => {
     setGridMatrix(grid);
     setCurrentPlayer(player);
     setWinner(winr);
     setTotalMarks(totalM);
     setTie(ti);
+    setOponentIdGame(gamPl);
   };
 
   /**
@@ -173,7 +183,7 @@ const TicTacToeGrid = ({ socketRef, oponentId, IAmPlayer, addWinner }) => {
     setWinner(false);
     setTotalMarks(0);
     setTie(false);
-    emitToPlayer(newGridMatrix, firstPlayer, false, 0, false);
+    emitToPlayer(newGridMatrix, firstPlayer, false, 0, false, false);
   };
 
   /**
@@ -236,7 +246,14 @@ const TicTacToeGrid = ({ socketRef, oponentId, IAmPlayer, addWinner }) => {
     if (isWinner()) {
       setWinner(currentPlayer);
       addWinner();
-      emitToPlayer(newGridMatrix, currentPlayer, currentPlayer, newCount, tie);
+      emitToPlayer(
+        newGridMatrix,
+        currentPlayer,
+        currentPlayer,
+        newCount,
+        tie,
+        gamePlayer
+      );
       return;
     }
     if (isTie(newCount)) {
@@ -247,7 +264,7 @@ const TicTacToeGrid = ({ socketRef, oponentId, IAmPlayer, addWinner }) => {
     // send the grid to the oponent
     const newPlayer = changePlayer(currentPlayer);
     if (oponentId !== 'computer') {
-      emitToPlayer(newGridMatrix, newPlayer, winner, newCount, tie);
+      emitToPlayer(newGridMatrix, newPlayer, winner, newCount, tie, gamePlayer);
     } else {
       // eslint-disable-next-line no-lonely-if
       if (newPlayer === secondPlayer && newCount < 8) {

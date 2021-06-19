@@ -1,7 +1,7 @@
 {
   "proxy": "http://localhost:1337",
   "scripts": {
-    "start": "npm run starts && cross-env NODE_ENV=development webpack serve --mode=development --config config/webpack.dev.js",
+    "start": "cross-env NODE_ENV=development webpack serve --mode=development --config config/webpack.dev.js",
     "build": "npm run starts && webpack --mode=production --config config/webpack.prod.js",
     "lint": "eslint .",
     "prettier": "npx prettier --write .",

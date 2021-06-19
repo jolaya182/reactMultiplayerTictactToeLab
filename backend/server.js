@@ -222,7 +222,6 @@ let sql = '';
  */
 const returnResults = (req, res) => {
   const { body } = req;
-  console.log('returnResults', body);
   res.send({ data: body });
 };
 
@@ -265,7 +264,6 @@ const pullInLeaders = (req, res, next) => {
  */
 const callLeaderBoard = (req, res, next) => {
   const { player, history } = req.body;
-  console.log('callLeaderBoard,', req.body);
   sql = `SELECT  users.name, leaderboard.userId, leaderboard.wins
     FROM users
     INNER JOIN leaderboard 
@@ -280,7 +278,6 @@ const callLeaderBoard = (req, res, next) => {
 
 const getLeaderBoard = (req, res, next) => {
   const { body } = req;
-  console.log('getLeaderBoard,', body);
   io.to('tic-tact-toe-room').emit('receive-leader-board', body);
   req.body = { rows: body };
   next();
@@ -291,7 +288,6 @@ const getLeaderBoard = (req, res, next) => {
  */
 const updateLeaderBoard = (req, res, next) => {
   const { winnerId, totalWins, history } = req.body;
-  console.log('updateLeaderBoard', req.body);
   let wins;
   if (totalWins.wins === 0) {
     // insert
@@ -313,7 +309,6 @@ const updateLeaderBoard = (req, res, next) => {
 };
 
 const getHistory = (req, res, next) => {
-  console.log('getHistory', req.body);
   sql = ` SELECT T1.winnerId, T2.loserId
     FROM 
     (SELECT u.name AS winnerId, u.userId, h.historyId FROM users AS u INNER JOIN history AS H ON u.userId=h.winnerId) AS T1
@@ -323,7 +318,6 @@ const getHistory = (req, res, next) => {
    `;
 
   db.all(sql, [], function (err, history) {
-    console.log('tw', history);
     req.body.history = history;
     req.body = { err, rows: req.body };
     next();
@@ -332,11 +326,8 @@ const getHistory = (req, res, next) => {
 
 const insertHistory = (req, res, next) => {
   const { winnerId, loserId } = req.body;
-  console.log('insertHistory', req.body);
-  //  1sql = `INSERT INTO leaderboard( userId, wins ) VALUES( '${winnerId}', '${wins}' )`;
   sql = `INSERT INTO history(winnerId, loserId) VALUES('${winnerId}','${loserId}' )`;
-  db.run(sql, [], function (err, tw) {
-    console.log('tw', tw);
+  db.run(sql, [], function (err) {
     req.body = { err, rows: req.body };
     next();
   });
@@ -383,7 +374,6 @@ app.post(
     const { winnerId, loserId } = req.body;
     sql = `SELECT wins FROM leaderboard WHERE userId='${winnerId}'`;
     db.all(sql, [], function (err, tw) {
-      console.log('totalWins', tw);
       const totalWins = tw[0] || { wins: 0 };
       const rows = { winnerId, totalWins, loserId };
       req.body = { err, rows };
@@ -411,10 +401,12 @@ app.post(
 
     sql = `INSERT INTO users( name, password ) VALUES( '${name}', '${password}' )`;
     db.run(sql, [], function (err) {
-      req.body = { err, rows: [{ userId: this.lastID }] };
+      req.body = { err, rows: { player: [{ userId: this.lastID }] } };
       next();
     });
   },
+  checkForErrors,
+  getHistory,
   checkForErrors,
   callLeaderBoard,
   checkForErrors,
@@ -462,7 +454,6 @@ app.get(
   (req, res, next) => {
     sql = `SELECT * FROM history`;
     db.all(sql, [], function (err, history) {
-      console.log('history', history);
       req.body = { err, rows: history };
       next();
     });

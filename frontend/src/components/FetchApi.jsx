@@ -25,7 +25,6 @@ const FetchApi = (url, method, callBack, payload) => {
       return rr;
     })
     .then((incomingData) => {
-      console.log('incomingData', incomingData);
       const { allLeaders, player } = incomingData.data;
       if (Object.keys(player.length)) {
         const history = incomingData.data.history

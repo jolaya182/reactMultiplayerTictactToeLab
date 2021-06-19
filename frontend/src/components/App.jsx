@@ -41,6 +41,7 @@ const App = () => {
    */
   const showLeaderBoard = (comingLeaders) => {
     setLeaders(comingLeaders.allLeaders);
+    setHistory(comingLeaders.history);
   };
 
   /**
@@ -80,7 +81,6 @@ const App = () => {
    * @param {obj} incomingPlayer
    */
   const connectGame = (incomingLeaders, incomingPlayer, newhistory) => {
-    // console.log('newhistory', newhistory);
     if (newhistory.length > 0) setHistory(newhistory);
     setPlayer(incomingPlayer.userId);
     setLeaders(incomingLeaders);

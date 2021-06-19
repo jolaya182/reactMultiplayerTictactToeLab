@@ -1,6 +1,5 @@
 /* eslint-disable consistent-return */
 /* eslint-disable react/react-in-jsx-scope */
-// @refresh reset
 /**
  * @Author: Javier Olaya
  * @fileName: App.jsx
@@ -201,7 +200,7 @@ const App = () => {
   return (
     <div>
       <section className="gameHeader">
-        Hi {myInfo && myInfo.playerName} Tic Tac Toe! {appendMessage()}
+        Hi!! {myInfo && myInfo.playerName} Tic Tac Toe! {appendMessage()}
       </section>
       {!login && (
         <Form

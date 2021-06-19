@@ -12,7 +12,7 @@
  * @return {html}
  */
 const History = ({ history }) => {
-    console.log("history", history)
+  console.log('history', history);
   return (
     <div>
       <div className="leader"> History Board </div>

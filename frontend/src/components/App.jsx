@@ -80,7 +80,7 @@ const App = () => {
    * @param {obj} incomingPlayer
    */
   const connectGame = (incomingLeaders, incomingPlayer, newhistory) => {
-    console.log('newhistory', newhistory);
+    // console.log('newhistory', newhistory);
     if (newhistory.length > 0) setHistory(newhistory);
     setPlayer(incomingPlayer.userId);
     setLeaders(incomingLeaders);

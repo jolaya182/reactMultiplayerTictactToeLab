@@ -213,7 +213,7 @@ db.run(
 // db.run('DROP TABLE history');
 
 db.run(
-  'CREATE TABLE IF NOT EXISTS history (winnerId INTEGER, loserId INTEGER,  FOREIGN KEY(winnerId) REFERENCES users(userId) ON DELETE CASCADE )'
+  'CREATE TABLE IF NOT EXISTS history (historyId INTEGER PRIMARY KEY AUTOINCREMENT, winnerId INTEGER, loserId INTEGER,  FOREIGN KEY(winnerId) REFERENCES users(userId) ON DELETE CASCADE,   FOREIGN KEY(loserId) REFERENCES users(userId) ON DELETE CASCADE)'
 );
 
 let sql = '';
@@ -314,7 +314,14 @@ const updateLeaderBoard = (req, res, next) => {
 
 const getHistory = (req, res, next) => {
   console.log('getHistory', req.body);
-  sql = `SELECT * FROM history`;
+  sql = ` SELECT T1.winnerId, T2.loserId
+    FROM 
+    (SELECT u.name AS winnerId, u.userId, h.historyId FROM users AS u INNER JOIN history AS H ON u.userId=h.winnerId) AS T1
+    INNER JOIN 
+    (SELECT u.name AS loserId, u.userId, h.historyId FROM users AS u INNER JOIN history AS h ON u.userId=h.loserId) AS T2
+    ON T1.historyId=T2.historyId
+   `;
+
   db.all(sql, [], function (err, history) {
     console.log('tw', history);
     req.body.history = history;
